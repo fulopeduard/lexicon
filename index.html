@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lexicon Aura - Final</title>
+    <title>Lexicon Aura - Final Fix</title>
     <style>
         /* --- TÉMÁK ÉS VÁLTOZÓK --- */
         :root {
@@ -19,10 +19,9 @@
             --error: #ef4444;
             --warning: #f59e0b;
             --border: #e5e7eb;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            --radius: 24px;
-            --font: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --radius: 20px;
+            --font: 'Segoe UI', sans-serif;
         }
 
         body.dark-mode {
@@ -32,11 +31,9 @@
             --text-main: #f1f5f9;
             --text-sub: #94a3b8;
             --border: #334155;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font); transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font); transition: all 0.3s ease; }
 
         body {
             background-color: var(--bg-body);
@@ -49,14 +46,17 @@
             padding: 20px;
         }
 
-        /* --- LOADING --- */
-        #loading-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-body); z-index: 2000; display: flex;
-            justify-content: center; align-items: center; flex-direction: column;
+        /* --- STATS BAR --- */
+        .stats-bar {
+            width: 100%; max-width: 600px;
+            display: flex; justify-content: space-around;
+            background: var(--bg-card); padding: 15px;
+            border-radius: 16px; margin-bottom: 20px;
+            box-shadow: var(--shadow); border: 1px solid var(--border);
+            display: none;
         }
-        .spinner { border: 4px solid rgba(0,0,0,0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--primary); animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .stat-item { font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .stat-value { color: var(--primary); font-size: 1.3rem; }
 
         /* --- AUTH --- */
         #auth-container {
@@ -71,32 +71,26 @@
         .auth-tab.active { background: var(--bg-card); color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 
         /* --- APP --- */
-        #app-container {
-            width: 100%; display: flex; flex-direction: column; align-items: center;
-            display: none;
-        }
+        #app-container { width: 100%; display: none; flex-direction: column; align-items: center; }
         #app-container.active { display: flex; animation: fadeIn 0.5s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        header { width: 100%; max-width: 600px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
-        h1 { font-size: 1.8rem; font-weight: 800; background: linear-gradient(135deg, var(--primary), var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        header { width: 100%; max-width: 600px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
+        h1 { font-size: 1.8rem; font-weight: 800; color: var(--primary); }
         .header-buttons { display: flex; gap: 10px; }
-        .icon-btn { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); padding: 8px 12px; border-radius: 12px; cursor: pointer; font-size: 1.2rem; box-shadow: var(--shadow); }
+        .icon-btn { background: var(--bg-card); border: 1px solid var(--border); padding: 8px 12px; border-radius: 12px; cursor: pointer; }
 
-        nav { display: flex; gap: 5px; background: var(--bg-card); padding: 6px; border-radius: 50px; box-shadow: var(--shadow); margin-bottom: 30px; width: 100%; max-width: 600px; border: 1px solid var(--border); overflow-x: auto; }
+        nav { display: flex; gap: 5px; background: var(--bg-card); padding: 6px; border-radius: 50px; box-shadow: var(--shadow); margin-bottom: 20px; width: 100%; max-width: 600px; border: 1px solid var(--border); overflow-x: auto; }
         nav button { flex: 1; border: none; background: transparent; padding: 12px; border-radius: 40px; cursor: pointer; font-weight: 600; color: var(--text-sub); white-space: nowrap; }
-        nav button.active { background-color: var(--primary); color: white; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4); }
+        nav button.active { background-color: var(--primary); color: white; }
 
-        select, input, textarea { width: 100%; padding: 14px 16px; border: 2px solid var(--border); border-radius: 16px; background: var(--bg-input); color: var(--text-main); font-size: 1rem; margin-bottom: 15px; outline: none; transition: border-color 0.2s; }
+        select, input, textarea { width: 100%; padding: 14px 16px; border: 2px solid var(--border); border-radius: 16px; background: var(--bg-input); color: var(--text-main); font-size: 1rem; margin-bottom: 15px; outline: none; }
         select:focus, input:focus, textarea:focus { border-color: var(--primary); }
 
-        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; border: none; padding: 14px; border-radius: 16px; width: 100%; font-weight: 700; cursor: pointer; font-size: 1rem; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
-        .btn-primary:hover { opacity: 0.9; }
-        .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
+        .btn-primary { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 16px; width: 100%; font-weight: bold; cursor: pointer; }
         .btn-secondary { background: transparent; border: 2px solid var(--border); color: var(--text-sub); padding: 10px 20px; border-radius: 14px; cursor: pointer; font-weight: 600; }
-        .btn-secondary:hover { border-color: var(--primary); color: var(--primary); background: var(--bg-card); }
-        .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--error); border: 1px solid var(--error); padding: 8px 16px; border-radius: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn-danger:hover { background: var(--error); color: white; }
+        .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--error); border: 1px solid var(--error); padding: 8px 16px; border-radius: 14px; font-weight: bold; cursor: pointer; }
+        .btn-archive { background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid var(--success); padding: 8px 16px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 0.9rem; }
 
         .view-section { display: none; width: 100%; max-width: 500px; }
         .view-section.active { display: block; animation: slideUp 0.4s; }
@@ -104,29 +98,34 @@
 
         /* CARDS */
         .card-container { perspective: 1200px; width: 100%; height: 360px; margin-bottom: 25px; cursor: pointer; }
-        .card { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.7s; border-radius: var(--radius); box-shadow: var(--shadow-lg); }
+        .card { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.7s; border-radius: var(--radius); box-shadow: var(--shadow); }
         .card.flipped { transform: rotateY(180deg); }
         .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--bg-card); border-radius: var(--radius); padding: 30px; text-align: center; border: 1px solid var(--border); }
-        .card-front h2 { font-size: 2.5rem; font-weight: 800; color: var(--text-main); margin-bottom: 10px; }
+        .card-front h2 { font-size: 2.5rem; font-weight: 800; margin-bottom: 10px; }
         .card-back { transform: rotateY(180deg); }
         .card-back h3 { font-size: 1.8rem; color: var(--primary); margin-bottom: 15px; }
 
-        /* ICONS ON CARD */
-        .edit-icon-btn { position: absolute; top: 20px; right: 20px; background: var(--bg-input); border: none; color: var(--text-sub); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
-        .archive-icon-btn { position: absolute; top: 20px; left: 20px; background: rgba(16, 185, 129, 0.1); border: none; color: var(--success); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .edit-icon-btn { position: absolute; top: 20px; right: 20px; background: var(--bg-input); border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; }
+        .archive-pos-btn { position: absolute; top: 20px; left: 20px; }
 
+        /* TEST MODE */
         .test-card { background: var(--bg-card); padding: 30px; border-radius: var(--radius); text-align: center; border: 1px solid var(--border); }
-        .dynamic-display { font-family: 'Courier New', monospace; font-size: 1.6rem; letter-spacing: 2px; margin: 25px 0; min-height: 40px; color: var(--text-main); line-height: 1.5; word-wrap: break-word; }
+        .dynamic-display { font-family: monospace; font-size: 1.6rem; letter-spacing: 2px; margin: 25px 0; min-height: 40px; word-wrap: break-word; }
         .char-correct { color: var(--success); font-weight: bold; border-bottom: 2px solid var(--success); }
         .char-wrong { color: var(--error); font-weight: bold; border-bottom: 2px solid var(--error); }
         .char-placeholder { color: var(--border); }
-        .char-hint { opacity: 0.5; color: var(--text-sub); }
+        .char-hint { opacity: 0.5; }
         .test-controls { display: flex; gap: 10px; justify-content: center; margin-bottom: 15px; flex-wrap: wrap; }
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 100; }
         .modal-overlay.open { display: flex; }
         .modal-content { background: var(--bg-card); padding: 30px; border-radius: 24px; width: 90%; max-width: 400px; animation: modalPop 0.3s; }
         @keyframes modalPop { from { transform: scale(0.8); } to { transform: scale(1); } }
+
+        #loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:var(--bg-body); z-index:2000; display:flex; justify-content:center; align-items:center; }
+        .spinner { border: 4px solid rgba(0,0,0,0.1); width: 36px; height: 36px; border-radius: 50%; border-left-color: var(--primary); animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
         .hidden { display: none !important; }
     </style>
 </head>
@@ -136,7 +135,7 @@
 
 <div id="auth-container">
     <h1>Lexicon Aura</h1>
-    <p style="color:var(--text-sub); margin-bottom:20px;">Tanulj hatékonyan a felhőben</p>
+    <p style="margin-bottom:20px; color:var(--text-sub);">Tanulj, gyűjts pontokat, fejlődj!</p>
     <div class="auth-tabs">
         <button class="auth-tab active" onclick="toggleAuthMode('login')" id="tab-login-mode">Belépés</button>
         <button class="auth-tab" onclick="toggleAuthMode('register')" id="tab-register-mode">Regisztráció</button>
@@ -144,7 +143,7 @@
     <input type="email" id="auth-email" placeholder="Email cím">
     <input type="password" id="auth-password" placeholder="Jelszó">
     <button class="btn-primary" id="btn-auth-action" onclick="handleAuth()">Belépés</button>
-    <p id="auth-error" style="color:var(--error); margin-top:15px; font-size:0.9rem;"></p>
+    <p id="auth-error" style="color:var(--error); margin-top:10px; font-size:0.9rem;"></p>
 </div>
 
 <div id="app-container">
@@ -156,6 +155,11 @@
         </div>
     </header>
 
+    <div class="stats-bar" id="stats-bar">
+        <div class="stat-item">🏆 <span id="stat-points" class="stat-value">0</span></div>
+        <div class="stat-item">🔥 <span id="stat-streak" class="stat-value">0</span></div>
+    </div>
+
     <nav>
         <button onclick="switchTab('learn')" id="tab-learn" class="active">Tanulás</button>
         <button onclick="switchTab('test')" id="tab-test">Teszt</button>
@@ -166,7 +170,7 @@
     <section id="view-learn" class="view-section active">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
             <select id="learn-lang-select" onchange="filterAndRenderCards()" style="width: auto; margin:0; padding: 8px 16px;"></select>
-            <span id="card-counter" style="color: var(--text-sub); font-size: 0.9rem; font-weight: 600;">0 / 0</span>
+            <span id="card-counter" style="color: var(--text-sub); font-weight: 600;">0 / 0</span>
         </div>
         <div id="flashcard-area"></div>
         <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
@@ -186,13 +190,13 @@
     <section id="view-archive" class="view-section">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
             <select id="archive-lang-select" onchange="renderArchive()" style="width: auto; margin:0; padding: 8px 16px;"></select>
-            <span id="archive-counter" style="color: var(--text-sub); font-size: 0.9rem; font-weight: 600;">Archivált: 0</span>
+            <span id="archive-counter">0</span>
         </div>
         <div id="archive-area"></div>
         <div style="display: flex; gap: 15px; justify-content: center; margin-top: 15px;">
-            <button class="btn-secondary" onclick="prevArchive()" style="flex:1;">←</button>
-            <button class="btn-primary" onclick="flipArchiveCard()" style="flex:2;">Fordít ↻</button>
-            <button class="btn-secondary" onclick="nextArchive()" style="flex:1;">→</button>
+            <button class="btn-secondary" onclick="prevArchive()">←</button>
+            <button class="btn-primary" onclick="flipArchiveCard()">Fordít ↻</button>
+            <button class="btn-secondary" onclick="nextArchive()">→</button>
         </div>
     </section>
 
@@ -202,20 +206,17 @@
                 <button class="btn-secondary" onclick="document.getElementById('add-single').classList.remove('hidden'); document.getElementById('add-bulk').classList.add('hidden');">Egyesével</button>
                 <button class="btn-secondary" onclick="document.getElementById('add-single').classList.add('hidden'); document.getElementById('add-bulk').classList.remove('hidden');">Tömeges</button>
             </div>
-
             <input type="text" id="new-lang" placeholder="Nyelv (pl. Angol)" list="lang-suggestions">
             <datalist id="lang-suggestions"></datalist>
-
             <div id="add-single">
                 <input type="text" id="inp-word" placeholder="Idegen szó (pl. Run)">
                 <input type="text" id="inp-meaning" placeholder="Jelentés (pl. Fut, szalad)">
                 <textarea id="inp-sentence" placeholder="Példamondat (Opcionális)" rows="2"></textarea>
                 <button class="btn-primary" onclick="addWord()">Mentés</button>
             </div>
-
             <div id="add-bulk" class="hidden">
                 <p style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 10px;">Formátum: Szó - Jelentés</p>
-                <textarea id="inp-bulk" rows="6" placeholder="Run - Fut, szalad&#10;Walk - Sétál, gyalogol"></textarea>
+                <textarea id="inp-bulk" rows="6" placeholder="Run - Fut, szalad&#10;Walk - Sétál"></textarea>
                 <button class="btn-primary" onclick="addBulk()">Tömeges Mentés</button>
             </div>
         </div>
@@ -226,14 +227,11 @@
     <div class="modal-content">
         <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
             <h3>Szerkesztés</h3>
-            <button onclick="closeEditModal()" style="border:none; background:none; font-size:1.5rem; cursor:pointer; color:var(--text-sub);">×</button>
+            <button onclick="closeEditModal()" style="border:none; background:none; font-size:1.5rem; cursor:pointer;">×</button>
         </div>
         <input type="hidden" id="edit-id">
-        <label style="font-size:0.8rem; color:var(--text-sub);">Szó</label>
         <input type="text" id="edit-word">
-        <label style="font-size:0.8rem; color:var(--text-sub);">Jelentés</label>
         <input type="text" id="edit-meaning">
-        <label style="font-size:0.8rem; color:var(--text-sub);">Példamondat</label>
         <textarea id="edit-sentence" rows="2"></textarea>
         <button class="btn-primary" onclick="saveEdit()">Frissítés</button>
         <button class="btn-secondary" style="width:100%; margin-top:10px; color:var(--error); border-color:var(--error);" onclick="deleteFromEdit()">Törlés</button>
@@ -245,7 +243,6 @@
     import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    // CONFIG
     const firebaseConfig = {
         apiKey: "AIzaSyBCgA35mEyUzt3u4DNKRGvD_HWGVIbgb0M",
         authDomain: "vocabulary-c6c17.firebaseapp.com",
@@ -269,10 +266,12 @@
     let archiveIndex = 0;
     let testList = [];
     let testIndex = 0;
-    let testScore = 0;
-    let revealedHints = [];
 
-    // --- AUTH ---
+    let revealedHints = [];
+    let hintCountForCurrentWord = 0;
+    let userPoints = 0;
+    let userStreak = 0;
+
     window.toggleAuthMode = (mode) => {
         authMode = mode;
         document.getElementById('tab-login-mode').className = mode === 'login' ? 'auth-tab active' : 'auth-tab';
@@ -284,20 +283,14 @@
     window.handleAuth = async () => {
         const email = document.getElementById('auth-email').value;
         const pass = document.getElementById('auth-password').value;
-        const errBox = document.getElementById('auth-error');
         const btn = document.getElementById('btn-auth-action');
-        if(!email || !pass) { errBox.textContent = "Kérlek töltsd ki a mezőket!"; return; }
-        btn.disabled = true; btn.textContent = "Folyamatban..."; errBox.textContent = "";
+        if(!email || !pass) return;
+        btn.disabled = true; btn.textContent = "...";
         try {
             if(authMode === 'login') await signInWithEmailAndPassword(auth, email, pass);
             else await createUserWithEmailAndPassword(auth, email, pass);
         } catch (e) {
-            let msg = e.message;
-            if(msg.includes('invalid-email')) msg = "Helytelen email formátum.";
-            if(msg.includes('user-not-found') || msg.includes('wrong-password') || msg.includes('invalid-credential')) msg = "Hibás email vagy jelszó.";
-            if(msg.includes('email-already-in-use')) msg = "Ez az email már regisztrálva van.";
-            if(msg.includes('weak-password')) msg = "Túl gyenge jelszó (min 6 karakter).";
-            errBox.textContent = "Hiba: " + msg;
+            document.getElementById('auth-error').textContent = "Hiba: " + e.message;
             btn.disabled = false; btn.textContent = authMode === 'login' ? 'Belépés' : 'Regisztráció';
         }
     };
@@ -310,17 +303,41 @@
             currentUser = user;
             document.getElementById('auth-container').classList.remove('active');
             document.getElementById('app-container').classList.add('active');
+            document.querySelector('.stats-bar').style.display = 'flex';
             document.body.style.justifyContent = 'flex-start';
+            loadStats();
             fetchWords();
         } else {
             currentUser = null;
             document.getElementById('auth-container').classList.add('active');
             document.getElementById('app-container').classList.remove('active');
+            document.querySelector('.stats-bar').style.display = 'none';
             document.body.style.justifyContent = 'center';
         }
     });
 
-    // --- DB ---
+    function loadStats() {
+        if(!currentUser) return;
+        const saved = localStorage.getItem(`lexicon_stats_${currentUser.uid}`);
+        if(saved) {
+            const p = JSON.parse(saved);
+            userPoints = p.points || 0;
+            userStreak = p.streak || 0;
+        } else { userPoints = 0; userStreak = 0; }
+        updateStatsUI();
+    }
+
+    function saveStats() {
+        if(!currentUser) return;
+        localStorage.setItem(`lexicon_stats_${currentUser.uid}`, JSON.stringify({ points: userPoints, streak: userStreak }));
+        updateStatsUI();
+    }
+
+    function updateStatsUI() {
+        document.getElementById('stat-points').textContent = userPoints;
+        document.getElementById('stat-streak').textContent = userStreak;
+    }
+
     async function fetchWords() {
         if(!currentUser) return;
         try {
@@ -332,38 +349,30 @@
 
             updateLangLists();
             filterAndRenderCards();
-            // Render archive too
-            const lang = document.getElementById('learn-lang-select').value;
-            if(lang) {
-                archivedWords = allWords.filter(w => w.lang === lang && w.learned === true);
-                renderArchive();
+
+            // If on test tab, force init
+            if(document.getElementById('view-test').classList.contains('active')) {
+                initTest();
             }
-        } catch (e) { console.error(e); alert("Hiba az adatok letöltésekor."); }
+        } catch (e) { console.error(e); }
     }
 
     window.addWord = async () => {
-        if(!currentUser) return;
         const lang = document.getElementById('new-lang').value.trim();
         const w = document.getElementById('inp-word').value.trim();
         const m = document.getElementById('inp-meaning').value.trim();
         const s = document.getElementById('inp-sentence').value.trim();
         if(!lang || !w || !m) return alert('Töltsd ki az adatokat!');
-
         try {
             const newDoc = { uid: currentUser.uid, lang, word: w, meaning: m, sentence: s, learned: false, createdAt: Date.now() };
             const docRef = await addDoc(collection(db, "words"), newDoc);
             allWords.unshift({ id: docRef.id, ...newDoc });
-            document.getElementById('inp-word').value = '';
-            document.getElementById('inp-meaning').value = '';
-            document.getElementById('inp-sentence').value = '';
-            updateLangLists();
-            filterAndRenderCards();
-            alert("Mentve!");
+            document.getElementById('inp-word').value = ''; document.getElementById('inp-meaning').value = '';
+            updateLangLists(); filterAndRenderCards(); alert("Mentve!");
         } catch (e) { alert("Hiba: " + e.message); }
     };
 
     window.addBulk = async () => {
-        if(!currentUser) return;
         const lang = document.getElementById('new-lang').value.trim();
         const text = document.getElementById('inp-bulk').value;
         if(!lang || !text) return;
@@ -380,13 +389,7 @@
                 count++;
             }
         });
-        if(count > 0) {
-            await batch.commit();
-            document.getElementById('inp-bulk').value = '';
-            updateLangLists();
-            filterAndRenderCards();
-            alert(`${count} szó importálva!`);
-        }
+        if(count > 0) { await batch.commit(); document.getElementById('inp-bulk').value = ''; updateLangLists(); filterAndRenderCards(); alert("Import kész!"); }
     };
 
     window.saveEdit = async () => {
@@ -398,9 +401,7 @@
             await updateDoc(doc(db, "words", id), { word: newWord, meaning: newMeaning, sentence: newSentence });
             const idx = allWords.findIndex(w => w.id === id);
             if(idx !== -1) { allWords[idx].word = newWord; allWords[idx].meaning = newMeaning; allWords[idx].sentence = newSentence; }
-            closeEditModal();
-            filterAndRenderCards();
-            renderArchive();
+            closeEditModal(); filterAndRenderCards(); renderArchive();
         } catch(e) { alert("Hiba: " + e.message); }
     };
 
@@ -410,41 +411,29 @@
         try {
             await deleteDoc(doc(db, "words", id));
             allWords = allWords.filter(w => w.id !== id);
-            closeEditModal();
-            filterAndRenderCards();
-            renderArchive();
+            closeEditModal(); filterAndRenderCards(); renderArchive();
         } catch(e) { alert("Hiba: " + e.message); }
     };
 
-    // --- LEARNED LOGIC ---
-    window.markAsLearned = async () => {
-        if(activeWords.length === 0) return;
-        const w = activeWords[currentIndex];
+    window.markAsLearnedDirect = async (id, e) => {
+        e.stopPropagation();
+        if(!confirm("Archiválod ezt a szót?")) return;
+        const w = allWords.find(x => x.id === id);
         if(!w) return;
         w.learned = true;
-        activeWords.splice(currentIndex, 1);
-        if(currentIndex >= activeWords.length) currentIndex = 0;
-        renderCard();
-        try {
-            await updateDoc(doc(db, "words", w.id), { learned: true });
-            const lang = document.getElementById('archive-lang-select').value;
-            if(lang === w.lang) { archivedWords.push(w); renderArchive(); }
-        } catch(e) { console.error("Error marking learned:", e); }
+        filterAndRenderCards();
+        try { await updateDoc(doc(db, "words", id), { learned: true }); } catch(err){console.error(err);}
     };
 
     window.restoreFromArchive = async (id, e) => {
-        if(e) e.stopPropagation();
+        e.stopPropagation();
         const w = allWords.find(i => i.id === id);
         if(!w) return;
         w.learned = false;
-        archivedWords = archivedWords.filter(item => item.id !== id);
-        renderArchive();
-        const learnLang = document.getElementById('learn-lang-select').value;
-        if(learnLang === w.lang) { activeWords.push(w); filterAndRenderCards(); }
-        try { await updateDoc(doc(db, "words", id), { learned: false }); } catch(err) { console.error(err); }
+        renderArchive(); filterAndRenderCards();
+        try { await updateDoc(doc(db, "words", id), { learned: false }); } catch(err){console.error(err);}
     };
 
-    // --- UI ---
     window.updateLangLists = () => {
         const langs = [...new Set(allWords.map(w => w.lang))];
         const suggestions = document.getElementById('lang-suggestions');
@@ -467,11 +456,8 @@
     function renderCard() {
         const area = document.getElementById('flashcard-area');
         const counter = document.getElementById('card-counter');
-        if(!activeWords.length) {
-            area.innerHTML = `<div class="test-card"><p>Nincs új tanulnivaló! 🎉<br>Vagy válts nyelvet/adj hozzá újat.</p></div>`;
-            counter.textContent = "0 / 0";
-            return;
-        }
+        if(!activeWords.length) { area.innerHTML = `<div class="test-card"><p>Nincs aktív tanulnivaló.</p></div>`; counter.textContent = "0 / 0"; return; }
+        if(currentIndex >= activeWords.length) currentIndex = 0;
         counter.textContent = `${currentIndex + 1} / ${activeWords.length}`;
         const w = activeWords[currentIndex];
         area.innerHTML = `
@@ -483,8 +469,10 @@
                         <p>Kattints!</p>
                     </div>
                     <div class="card-face card-back">
+                        <div class="archive-pos-btn">
+                            <button class="btn-archive" onclick="window.markAsLearnedDirect('${w.id}', event)">Archiválás 📦</button>
+                        </div>
                         <button class="edit-icon-btn" onclick="openEditModal('${w.id}', event)">✎</button>
-                        <button class="archive-icon-btn" onclick="window.markAsLearnedDirect('${w.id}', event)" title="Megtanultam">✔</button>
                         <h3>${w.meaning}</h3>
                         ${w.sentence ? `<p>„${w.sentence}”</p>` : ''}
                     </div>
@@ -492,45 +480,32 @@
             </div>`;
     }
 
-    window.markAsLearnedDirect = (id, e) => {
-        e.stopPropagation();
-        const idx = activeWords.findIndex(x => x.id === id);
-        if(idx !== -1) { currentIndex = idx; markAsLearned(); }
-    };
-
     window.nextCard = () => { if(activeWords.length) { currentIndex = (currentIndex + 1) % activeWords.length; renderCard(); }};
     window.prevCard = () => { if(activeWords.length) { currentIndex = (currentIndex - 1 + activeWords.length) % activeWords.length; renderCard(); }};
     window.flipCard = () => { const c = document.querySelector('#view-learn .card'); if(c) c.classList.toggle('flipped'); };
 
-    // --- ARCHIVE VIEW ---
     window.renderArchive = () => {
         const lang = document.getElementById('archive-lang-select').value;
         archivedWords = allWords.filter(w => w.lang === lang && w.learned === true);
         const area = document.getElementById('archive-area');
-        const counter = document.getElementById('archive-counter');
-        counter.textContent = `Archivált: ${archivedWords.length}`;
-
-        if(!archivedWords.length) {
-            area.innerHTML = `<div class="test-card"><p>Az archívum üres.</p></div>`;
-            return;
-        }
+        document.getElementById('archive-counter').textContent = `Archivált: ${archivedWords.length}`;
+        if(!archivedWords.length) { area.innerHTML = `<div class="test-card"><p>Üres.</p></div>`; return; }
         if(archiveIndex >= archivedWords.length) archiveIndex = 0;
         const w = archivedWords[archiveIndex];
         area.innerHTML = `
             <div class="card-container" onclick="this.querySelector('.card').classList.toggle('flipped')">
                 <div class="card">
-                    <div class="card-face card-front" style="border: 2px solid var(--success);">
-                        <span style="color:var(--success); font-weight:bold; margin-bottom:5px;">Archivált</span>
+                    <div class="card-face card-front" style="border:2px solid var(--success)">
+                        <span style="color:var(--success); font-weight:bold;">Archivált</span>
                         <h2>${w.word}</h2>
                     </div>
-                    <div class="card-face card-back" style="border: 2px solid var(--success);">
+                    <div class="card-face card-back" style="border:2px solid var(--success)">
                         <h3>${w.meaning}</h3>
-                        <button class="btn-secondary" style="margin-top:15px; border-color:var(--primary); color:var(--primary);" onclick="restoreFromArchive('${w.id}', event)">Vissza a tanuláshoz ↺</button>
+                        <button class="btn-secondary" style="margin-top:15px;" onclick="restoreFromArchive('${w.id}', event)">Visszaállít ↺</button>
                     </div>
                 </div>
             </div>`;
     };
-
     window.nextArchive = () => { if(archivedWords.length) { archiveIndex = (archiveIndex + 1) % archivedWords.length; renderArchive(); }};
     window.prevArchive = () => { if(archivedWords.length) { archiveIndex = (archiveIndex - 1 + archivedWords.length) % archivedWords.length; renderArchive(); }};
     window.flipArchiveCard = () => { const c = document.querySelector('#view-archive .card'); if(c) c.classList.toggle('flipped'); };
@@ -559,18 +534,37 @@
     // --- TEST MODE ---
     window.initTest = () => {
         const lang = document.getElementById('test-lang-select').value;
+        // Filter: same lang AND NOT learned
         testList = allWords.filter(w => w.lang === lang && w.learned !== true).sort(() => Math.random() - 0.5);
-        testIndex = 0; testScore = 0; renderTest();
+        testIndex = 0;
+        // IMPORTANT: Reset hints and display
+        revealedHints = [];
+        hintCountForCurrentWord = 0;
+        renderTest();
     };
 
     window.renderTest = () => {
         const div = document.getElementById('test-content');
-        if(!testList.length) { div.innerHTML = "<p>Nincs tesztelhető szó (vagy mind megtanultad!).</p>"; return; }
-        if(testIndex >= testList.length) {
-            div.innerHTML = `<h3>Vége!</h3><p>Eredmény: ${testScore}/${testList.length}</p><button class="btn-primary" onclick="initTest()">Újra</button>`; return;
+        if(!testList || testList.length === 0) {
+            div.innerHTML = "<p>Nincs tesztelhető szó a választott nyelven.</p>";
+            return;
         }
+        if(testIndex >= testList.length) {
+            div.innerHTML = `<h3>Vége! 🎉</h3><p>Pontszám: ${userPoints}</p><button class="btn-primary" onclick="initTest()">Újra</button>`;
+            return;
+        }
+
         const item = testList[testIndex];
+        // Safety check
+        if(!item) {
+            testIndex = 0;
+            initTest();
+            return;
+        }
+
         revealedHints = [];
+        hintCountForCurrentWord = 0;
+
         div.innerHTML = `
             <p style="color:var(--text-sub)">Jelentés?</p>
             <h2 style="font-size:2rem; margin-bottom:15px;">${item.word}</h2>
@@ -579,16 +573,26 @@
                 <button class="btn-danger" style="font-size:0.8rem;" onclick="giveUp()" id="btn-giveup">Megoldás</button>
             </div>
             <div id="dynamic-display" class="dynamic-display"></div>
-            <input type="text" id="test-input" placeholder="Írd be a jelentést..." oninput="updateVisuals()">
+            <input type="text" id="test-input" placeholder="Írd be a jelentést..." oninput="updateVisuals()" autocomplete="off">
             <div id="res-box" style="display:none; padding:15px; margin-top:10px; font-weight:bold; background:var(--bg-input); border-radius:12px;"></div>
             <button class="btn-primary" onclick="checkAnswer()" id="btn-check" style="margin-top:15px;">Ellenőrzés</button>
             <button class="btn-secondary hidden" onclick="nextTestItem()" id="btn-next" style="width:100%; margin-top:10px;">Tovább</button>
         `;
-        document.getElementById('test-input').addEventListener('keypress', e => { if(e.key === 'Enter') checkAnswer(); });
+
+        // Re-bind enter key
+        const input = document.getElementById('test-input');
+        input.focus();
+        input.addEventListener('keypress', e => { if(e.key === 'Enter') checkAnswer(); });
         updateVisuals();
     };
 
     window.triggerHint = () => {
+        if (hintCountForCurrentWord >= 3) {
+            if(!confirm("A 4. hint nullázza a streak-et. Biztosan?")) return;
+            userStreak = 0; saveStats();
+        }
+        hintCountForCurrentWord++;
+
         const t = testList[testIndex].meaning;
         if(revealedHints.length === 0) {
             revealedHints.push(0, t.length-1);
@@ -603,6 +607,7 @@
     };
 
     window.giveUp = () => {
+        userStreak = 0; saveStats();
         const fullMeaning = testList[testIndex].meaning;
         const res = document.getElementById('res-box');
         document.getElementById('test-input').disabled = true;
@@ -681,9 +686,14 @@
 
         res.style.display='block';
         if(isSuccess) {
-            res.style.color='var(--success)'; res.innerText="Helyes! ✅"; testScore++;
+            res.style.color='var(--success)'; res.innerText="Helyes! ✅ +50 Pont";
+            userPoints += 50;
+            userStreak += 1;
+            saveStats();
+            // testScore is just for this session display
         } else {
             res.style.color='var(--error)'; res.innerHTML=`Sajnos nem. ❌<br>Helyes válasz: ${fullMeaning}`;
+            userStreak = 0; saveStats();
         }
     };
 
