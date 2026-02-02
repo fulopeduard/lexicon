@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lexicon Aura - Final Fix</title>
+    <title>Lexicon Aura - High Score</title>
     <style>
         /* --- TÉMÁK ÉS VÁLTOZÓK --- */
         :root {
@@ -49,14 +49,15 @@
         /* --- STATS BAR --- */
         .stats-bar {
             width: 100%; max-width: 600px;
-            display: flex; justify-content: space-around;
-            background: var(--bg-card); padding: 15px;
+            display: flex; justify-content: space-between; /* Széthúzva */
+            background: var(--bg-card); padding: 15px 25px;
             border-radius: 16px; margin-bottom: 20px;
             box-shadow: var(--shadow); border: 1px solid var(--border);
             display: none;
         }
-        .stat-item { font-size: 1.1rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
-        .stat-value { color: var(--primary); font-size: 1.3rem; }
+        .stat-item { font-size: 1rem; font-weight: 700; display: flex; flex-direction: column; align-items: center; }
+        .stat-label { font-size: 0.8rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: 1px; }
+        .stat-value { color: var(--primary); font-size: 1.4rem; margin-top: 2px; }
 
         /* --- AUTH --- */
         #auth-container {
@@ -70,7 +71,7 @@
         .auth-tab { flex: 1; padding: 10px; cursor: pointer; border-radius: 8px; font-weight: bold; color: var(--text-sub); border: none; background: transparent; }
         .auth-tab.active { background: var(--bg-card); color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 
-        /* --- APP --- */
+        /* --- APP CONTAINER --- */
         #app-container { width: 100%; display: none; flex-direction: column; align-items: center; }
         #app-container.active { display: flex; animation: fadeIn 0.5s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -117,6 +118,7 @@
         .char-hint { opacity: 0.5; }
         .test-controls { display: flex; gap: 10px; justify-content: center; margin-bottom: 15px; flex-wrap: wrap; }
 
+        /* MODAL */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 100; }
         .modal-overlay.open { display: flex; }
         .modal-content { background: var(--bg-card); padding: 30px; border-radius: 24px; width: 90%; max-width: 400px; animation: modalPop 0.3s; }
@@ -156,8 +158,18 @@
     </header>
 
     <div class="stats-bar" id="stats-bar">
-        <div class="stat-item">🏆 <span id="stat-points" class="stat-value">0</span></div>
-        <div class="stat-item">🔥 <span id="stat-streak" class="stat-value">0</span></div>
+        <div class="stat-item">
+            <span class="stat-value" id="stat-points">0</span>
+            <span class="stat-label">Pontok 🏆</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value" id="stat-streak">0</span>
+            <span class="stat-label">Széria 🔥</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value" id="stat-max-streak" style="color:var(--warning);">0</span>
+            <span class="stat-label">Rekord 👑</span>
+        </div>
     </div>
 
     <nav>
@@ -269,8 +281,11 @@
 
     let revealedHints = [];
     let hintCountForCurrentWord = 0;
+
+    // GAMIFICATION
     let userPoints = 0;
     let userStreak = 0;
+    let userMaxStreak = 0;
 
     window.toggleAuthMode = (mode) => {
         authMode = mode;
@@ -316,6 +331,7 @@
         }
     });
 
+    // --- STATS LOGIC ---
     function loadStats() {
         if(!currentUser) return;
         const saved = localStorage.getItem(`lexicon_stats_${currentUser.uid}`);
@@ -323,21 +339,26 @@
             const p = JSON.parse(saved);
             userPoints = p.points || 0;
             userStreak = p.streak || 0;
-        } else { userPoints = 0; userStreak = 0; }
+            userMaxStreak = p.maxStreak || 0;
+        } else {
+            userPoints = 0; userStreak = 0; userMaxStreak = 0;
+        }
         updateStatsUI();
     }
 
     function saveStats() {
         if(!currentUser) return;
-        localStorage.setItem(`lexicon_stats_${currentUser.uid}`, JSON.stringify({ points: userPoints, streak: userStreak }));
+        localStorage.setItem(`lexicon_stats_${currentUser.uid}`, JSON.stringify({ points: userPoints, streak: userStreak, maxStreak: userMaxStreak }));
         updateStatsUI();
     }
 
     function updateStatsUI() {
         document.getElementById('stat-points').textContent = userPoints;
         document.getElementById('stat-streak').textContent = userStreak;
+        document.getElementById('stat-max-streak').textContent = userMaxStreak;
     }
 
+    // --- DB LOGIC ---
     async function fetchWords() {
         if(!currentUser) return;
         try {
@@ -350,7 +371,6 @@
             updateLangLists();
             filterAndRenderCards();
 
-            // If on test tab, force init
             if(document.getElementById('view-test').classList.contains('active')) {
                 initTest();
             }
@@ -515,9 +535,7 @@
         document.querySelectorAll('nav button').forEach(e => e.classList.remove('active'));
         document.getElementById(`view-${tab}`).classList.add('active');
         document.getElementById(`tab-${tab}`).classList.add('active');
-        if(tab === 'test') initTest();
-        if(tab === 'learn') filterAndRenderCards();
-        if(tab === 'archive') renderArchive();
+        if(tab === 'test') initTest(); if(tab === 'learn') filterAndRenderCards(); if(tab === 'archive') renderArchive();
     };
 
     window.openEditModal = (id, e) => {
@@ -534,10 +552,8 @@
     // --- TEST MODE ---
     window.initTest = () => {
         const lang = document.getElementById('test-lang-select').value;
-        // Filter: same lang AND NOT learned
         testList = allWords.filter(w => w.lang === lang && w.learned !== true).sort(() => Math.random() - 0.5);
         testIndex = 0;
-        // IMPORTANT: Reset hints and display
         revealedHints = [];
         hintCountForCurrentWord = 0;
         renderTest();
@@ -555,12 +571,7 @@
         }
 
         const item = testList[testIndex];
-        // Safety check
-        if(!item) {
-            testIndex = 0;
-            initTest();
-            return;
-        }
+        if(!item) { testIndex = 0; initTest(); return; }
 
         revealedHints = [];
         hintCountForCurrentWord = 0;
@@ -579,7 +590,6 @@
             <button class="btn-secondary hidden" onclick="nextTestItem()" id="btn-next" style="width:100%; margin-top:10px;">Tovább</button>
         `;
 
-        // Re-bind enter key
         const input = document.getElementById('test-input');
         input.focus();
         input.addEventListener('keypress', e => { if(e.key === 'Enter') checkAnswer(); });
@@ -689,8 +699,8 @@
             res.style.color='var(--success)'; res.innerText="Helyes! ✅ +50 Pont";
             userPoints += 50;
             userStreak += 1;
+            if(userStreak > userMaxStreak) userMaxStreak = userStreak;
             saveStats();
-            // testScore is just for this session display
         } else {
             res.style.color='var(--error)'; res.innerHTML=`Sajnos nem. ❌<br>Helyes válasz: ${fullMeaning}`;
             userStreak = 0; saveStats();
