@@ -49,7 +49,7 @@
         /* --- STATS BAR --- */
         .stats-bar {
             width: 100%; max-width: 600px;
-            display: flex; justify-content: space-between; /* Széthúzva */
+            display: flex; justify-content: space-between;
             background: var(--bg-card); padding: 15px 25px;
             border-radius: 16px; margin-bottom: 20px;
             box-shadow: var(--shadow); border: 1px solid var(--border);
@@ -218,8 +218,14 @@
                 <button class="btn-secondary" onclick="document.getElementById('add-single').classList.remove('hidden'); document.getElementById('add-bulk').classList.add('hidden');">Egyesével</button>
                 <button class="btn-secondary" onclick="document.getElementById('add-single').classList.add('hidden'); document.getElementById('add-bulk').classList.remove('hidden');">Tömeges</button>
             </div>
-            <input type="text" id="new-lang" placeholder="Nyelv (pl. Angol)" list="lang-suggestions">
-            <datalist id="lang-suggestions"></datalist>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <select id="new-lang-select" onchange="handleLangSelectChange()" style="margin-bottom: 0; flex: 1;">
+                    <option value="new">+ Új nyelv hozzáadása</option>
+                </select>
+                <input type="text" id="new-lang-input" placeholder="Új nyelv beírása (pl. Spanyol)" style="margin-bottom: 0; flex: 1; display: none;">
+            </div>
+
             <div id="add-single">
                 <input type="text" id="inp-word" placeholder="Idegen szó (pl. Run)">
                 <input type="text" id="inp-meaning" placeholder="Jelentés (pl. Fut, szalad)">
@@ -377,8 +383,59 @@
         } catch (e) { console.error(e); }
     }
 
+    // --- NYELVEK KEZELÉSE ---
+    window.handleLangSelectChange = () => {
+        const select = document.getElementById('new-lang-select');
+        const input = document.getElementById('new-lang-input');
+        if (select.value === 'new') {
+            input.style.display = 'block';
+            input.focus();
+        } else {
+            input.style.display = 'none';
+        }
+    };
+
+    function getAndSaveSelectedLang() {
+        const select = document.getElementById('new-lang-select');
+        const input = document.getElementById('new-lang-input');
+        let lang = select.value === 'new' ? input.value.trim() : select.value;
+        if (lang) localStorage.setItem('last_used_lang', lang);
+        return lang;
+    }
+
+    window.updateLangLists = () => {
+        const langs = [...new Set(allWords.map(w => w.lang))];
+        
+        // Tanulás, Teszt, Archívum szűrők frissítése
+        ['learn-lang-select', 'test-lang-select', 'archive-lang-select'].forEach(id => {
+            const el = document.getElementById(id);
+            const prev = el.value;
+            el.innerHTML = langs.map(l => `<option value="${l}">${l}</option>`).join('');
+            if (langs.includes(prev)) el.value = prev; else if(langs.length > 0) el.value = langs[0];
+        });
+
+        // Új szó felvitele - Dropdown frissítése
+        const addSelect = document.getElementById('new-lang-select');
+        const lastLang = localStorage.getItem('last_used_lang');
+        
+        let addHtml = langs.map(l => `<option value="${l}">${l}</option>`).join('');
+        addHtml += `<option value="new" style="font-weight:bold; color:var(--primary);">+ Új nyelv hozzáadása</option>`;
+        addSelect.innerHTML = addHtml;
+        
+        // Alapértelmezett érték beállítása
+        if (lastLang && langs.includes(lastLang)) {
+            addSelect.value = lastLang;
+        } else if (langs.length > 0) {
+            addSelect.value = langs[0];
+        } else {
+            addSelect.value = 'new';
+        }
+        
+        handleLangSelectChange(); 
+    };
+
     window.addWord = async () => {
-        const lang = document.getElementById('new-lang').value.trim();
+        const lang = getAndSaveSelectedLang();
         const w = document.getElementById('inp-word').value.trim();
         const m = document.getElementById('inp-meaning').value.trim();
         const s = document.getElementById('inp-sentence').value.trim();
@@ -387,13 +444,18 @@
             const newDoc = { uid: currentUser.uid, lang, word: w, meaning: m, sentence: s, learned: false, createdAt: Date.now() };
             const docRef = await addDoc(collection(db, "words"), newDoc);
             allWords.unshift({ id: docRef.id, ...newDoc });
-            document.getElementById('inp-word').value = ''; document.getElementById('inp-meaning').value = '';
+            
+            document.getElementById('inp-word').value = ''; 
+            document.getElementById('inp-meaning').value = '';
+            document.getElementById('inp-sentence').value = '';
+            document.getElementById('new-lang-input').value = '';
+            
             updateLangLists(); filterAndRenderCards(); alert("Mentve!");
         } catch (e) { alert("Hiba: " + e.message); }
     };
 
     window.addBulk = async () => {
-        const lang = document.getElementById('new-lang').value.trim();
+        const lang = getAndSaveSelectedLang();
         const text = document.getElementById('inp-bulk').value;
         if(!lang || !text) return;
         const batch = writeBatch(db);
@@ -409,7 +471,12 @@
                 count++;
             }
         });
-        if(count > 0) { await batch.commit(); document.getElementById('inp-bulk').value = ''; updateLangLists(); filterAndRenderCards(); alert("Import kész!"); }
+        if(count > 0) { 
+            await batch.commit(); 
+            document.getElementById('inp-bulk').value = ''; 
+            document.getElementById('new-lang-input').value = '';
+            updateLangLists(); filterAndRenderCards(); alert("Import kész!"); 
+        }
     };
 
     window.saveEdit = async () => {
@@ -452,18 +519,6 @@
         w.learned = false;
         renderArchive(); filterAndRenderCards();
         try { await updateDoc(doc(db, "words", id), { learned: false }); } catch(err){console.error(err);}
-    };
-
-    window.updateLangLists = () => {
-        const langs = [...new Set(allWords.map(w => w.lang))];
-        const suggestions = document.getElementById('lang-suggestions');
-        suggestions.innerHTML = langs.map(l => `<option value="${l}">`).join('');
-        ['learn-lang-select', 'test-lang-select', 'archive-lang-select'].forEach(id => {
-            const el = document.getElementById(id);
-            const prev = el.value;
-            el.innerHTML = langs.map(l => `<option value="${l}">${l}</option>`).join('');
-            if(langs.includes(prev)) el.value = prev; else if(langs.length > 0) el.value = langs[0];
-        });
     };
 
     window.filterAndRenderCards = () => {
@@ -709,7 +764,9 @@
 
     window.nextTestItem = () => { testIndex++; renderTest(); };
     window.toggleTheme = () => { document.body.classList.toggle('dark-mode'); localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light'); };
-    if(localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode');
+    
+    // DARK MODE ALAPÉRTELMEZETT BEÁLLÍTÁS
+    if(localStorage.getItem('theme') !== 'light') document.body.classList.add('dark-mode');
 </script>
 </body>
 </html>
