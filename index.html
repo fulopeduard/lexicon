@@ -215,13 +215,13 @@
     <section id="view-add" class="view-section">
         <div style="background: var(--bg-card); padding: 25px; border-radius: var(--radius); border: 1px solid var(--border);">
             <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                <button class="btn-secondary" onclick="switchAddMode('single')">Egyesével</button>
-                <button class="btn-secondary" onclick="switchAddMode('bulk')">Tömeges</button>
+                <button class="btn-secondary" onclick="document.getElementById('add-single').classList.remove('hidden'); document.getElementById('add-bulk').classList.add('hidden');">Egyesével</button>
+                <button class="btn-secondary" onclick="document.getElementById('add-single').classList.add('hidden'); document.getElementById('add-bulk').classList.remove('hidden');">Tömeges</button>
             </div>
             
             <div style="display: flex; gap: 10px; margin-bottom: 15px;">
                 <select id="new-lang-select" onchange="handleLangSelectChange()" style="margin-bottom: 0; flex: 1;">
-                    <option value="new">+ Új nyelv hozzáadása...</option>
+                    <option value="new">+ Új nyelv hozzáadása</option>
                 </select>
                 <input type="text" id="new-lang-input" placeholder="Új nyelv beírása (pl. Spanyol)" style="margin-bottom: 0; flex: 1; display: none;">
             </div>
@@ -392,7 +392,6 @@
             input.focus();
         } else {
             input.style.display = 'none';
-            document.getElementById('inp-word').focus(); // Fókusz vissza a szóra nyelvválasztás után
         }
     };
 
@@ -405,8 +404,9 @@
     }
 
     window.updateLangLists = () => {
-        const langs = [...new Set(allWords.map(w => w.lang ? w.lang.trim() : '').filter(l => l !== ''))];
+        const langs = [...new Set(allWords.map(w => w.lang))];
         
+        // Tanulás, Teszt, Archívum szűrők frissítése
         ['learn-lang-select', 'test-lang-select', 'archive-lang-select'].forEach(id => {
             const el = document.getElementById(id);
             const prev = el.value;
@@ -414,35 +414,24 @@
             if (langs.includes(prev)) el.value = prev; else if(langs.length > 0) el.value = langs[0];
         });
 
+        // Új szó felvitele - Dropdown frissítése
         const addSelect = document.getElementById('new-lang-select');
         const lastLang = localStorage.getItem('last_used_lang');
         
         let addHtml = langs.map(l => `<option value="${l}">${l}</option>`).join('');
-        addHtml += `<option value="new" style="font-weight:bold; color:var(--primary);">+ Új nyelv hozzáadása...</option>`;
+        addHtml += `<option value="new" style="font-weight:bold; color:var(--primary);">+ Új nyelv hozzáadása</option>`;
         addSelect.innerHTML = addHtml;
         
+        // Alapértelmezett érték beállítása
         if (lastLang && langs.includes(lastLang)) {
             addSelect.value = lastLang;
         } else if (langs.length > 0) {
             addSelect.value = langs[0];
-            localStorage.setItem('last_used_lang', langs[0]);
         } else {
             addSelect.value = 'new';
         }
         
         handleLangSelectChange(); 
-    };
-
-    window.switchAddMode = (mode) => {
-        if (mode === 'single') {
-            document.getElementById('add-single').classList.remove('hidden');
-            document.getElementById('add-bulk').classList.add('hidden');
-            document.getElementById('inp-word').focus();
-        } else {
-            document.getElementById('add-single').classList.add('hidden');
-            document.getElementById('add-bulk').classList.remove('hidden');
-            document.getElementById('inp-bulk').focus();
-        }
     };
 
     window.addWord = async () => {
@@ -461,12 +450,7 @@
             document.getElementById('inp-sentence').value = '';
             document.getElementById('new-lang-input').value = '';
             
-            updateLangLists(); 
-            filterAndRenderCards(); 
-            
-            // Fókusz visszatétele mentés után
-            setTimeout(() => document.getElementById('inp-word').focus(), 50);
-            
+            updateLangLists(); filterAndRenderCards(); alert("Mentve!");
         } catch (e) { alert("Hiba: " + e.message); }
     };
 
@@ -491,12 +475,7 @@
             await batch.commit(); 
             document.getElementById('inp-bulk').value = ''; 
             document.getElementById('new-lang-input').value = '';
-            updateLangLists(); 
-            filterAndRenderCards(); 
-            alert("Import kész!"); 
-            
-            // Fókusz visszatétele mentés után
-            setTimeout(() => document.getElementById('inp-bulk').focus(), 50);
+            updateLangLists(); filterAndRenderCards(); alert("Import kész!"); 
         }
     };
 
@@ -611,21 +590,7 @@
         document.querySelectorAll('nav button').forEach(e => e.classList.remove('active'));
         document.getElementById(`view-${tab}`).classList.add('active');
         document.getElementById(`tab-${tab}`).classList.add('active');
-        
-        if(tab === 'test') initTest(); 
-        if(tab === 'learn') filterAndRenderCards(); 
-        if(tab === 'archive') renderArchive();
-        
-        // Fókusz logika az Új Szó fülre váltáskor
-        if(tab === 'add') {
-            setTimeout(() => {
-                if(!document.getElementById('add-single').classList.contains('hidden')) {
-                    document.getElementById('inp-word').focus();
-                } else {
-                    document.getElementById('inp-bulk').focus();
-                }
-            }, 50);
-        }
+        if(tab === 'test') initTest(); if(tab === 'learn') filterAndRenderCards(); if(tab === 'archive') renderArchive();
     };
 
     window.openEditModal = (id, e) => {
