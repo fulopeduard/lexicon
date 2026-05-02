@@ -451,6 +451,7 @@
             document.getElementById('new-lang-input').value = '';
             
             updateLangLists(); filterAndRenderCards(); alert("Mentve!");
+            document.getElementById('inp-word').focus();
         } catch (e) { alert("Hiba: " + e.message); }
     };
 
@@ -590,7 +591,17 @@
         document.querySelectorAll('nav button').forEach(e => e.classList.remove('active'));
         document.getElementById(`view-${tab}`).classList.add('active');
         document.getElementById(`tab-${tab}`).classList.add('active');
-        if(tab === 'test') initTest(); if(tab === 'learn') filterAndRenderCards(); if(tab === 'archive') renderArchive();
+        
+        if(tab === 'test') initTest(); 
+        if(tab === 'learn') filterAndRenderCards(); 
+        if(tab === 'archive') renderArchive();
+        if(tab === 'add') {
+            // Animáció után fókuszál az első beviteli mezőre
+            setTimeout(() => {
+                const inputElement = document.getElementById('inp-word');
+                if(inputElement) inputElement.focus();
+            }, 50);
+        }
     };
 
     window.openEditModal = (id, e) => {
