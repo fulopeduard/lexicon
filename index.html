@@ -218,13 +218,13 @@
             <span id="card-counter" style="color: var(--text-sub); font-weight: 600;">0 / 0</span>
         </div>
 
-                <div id="learn-search-container" style="display: none; max-width: 500px; margin: 0 auto 20px auto; width: 100%; animation: slideUp 0.3s;">
+        <div id="learn-search-container" style="display: none; max-width: 500px; margin: 0 auto 20px auto; width: 100%; animation: slideUp 0.3s;">
             <div style="display: flex; gap: 10px;">
-                <input type="text" id="learn-search-input" placeholder="Keresés szó vagy jelentés alapján..." oninput="renderLearnArea()" style="margin-bottom: 0; flex: 1;">
+                <input type="text" id="learn-search-input" placeholder="Keresés szó vagy jelentés alapján..." oninput="window.renderLearnArea()" style="margin-bottom: 0; flex: 1;">
                 <button class="btn-secondary" style="width: auto; padding: 0 15px;" onclick="toggleLearnSearch()" title="Keresés bezárása">✖</button>
             </div>
         </div>
-                <div id="flashcard-area"></div>
+        <div id="flashcard-area"></div>
     </section>
 
     <section id="view-test" class="view-section">
@@ -259,7 +259,7 @@
             <div id="add-single" style="width: 100%;">
                 <div style="display: flex; gap: 10px; margin-bottom: 15px; width: 100%;">
                     <input type="text" id="inp-word" placeholder="Idegen szó (pl. Run)" style="margin-bottom: 0; flex-grow: 1; width: 100%;">
-                    <button class="btn-secondary" style="width: 60px; flex-shrink: 0; padding: 0; font-size: 1.4rem; display: flex; align-items: center; justify-content: center; margin-bottom: 0;" onclick="const w = document.getElementById('inp-word').value.trim(); if(w) { window.open('https://www.deepl.com/translator?share=generic#en/hu/' + encodeURIComponent(w), 'DeepLPopup', 'width=800,height=700,left=200,top=100,resizable=yes,scrollbars=yes'); } else { alert('Kérlek, írj be egy szót előbb!'); }" title="Megnyitás DeepL-ben">🌐</button>
+                    <button class="btn-secondary" style="width: 60px; flex-shrink: 0; padding: 0; font-size: 1.4rem; display: flex; align-items: center; justify-content: center; margin-bottom: 0;" onclick="openDeepl()" title="Megnyitás DeepL-ben">🌐</button>
                 </div>
                 <input type="text" id="inp-meaning" placeholder="Jelentés (pl. Fut, szalad)">
                 <textarea id="inp-sentence" placeholder="Példamondat (Opcionális)" rows="2"></textarea>
@@ -298,6 +298,7 @@
         <div style="display: flex; flex-direction: column; gap: 15px;">
             <button class="btn-secondary" onclick="toggleLearnViewMode()" id="modal-view-btn">🔳 Egyes nézet (Fókuszált)</button>
             <button class="btn-secondary" onclick="toggleTheme()" id="modal-theme-btn">☀️ Világos mód</button>
+            <button class="btn-secondary" onclick="toggleDeeplPopup()" id="modal-deepl-btn">🌐 DeepL: Felugró ablak</button>
             <button class="btn-danger" onclick="handleLogout()">↪ Kijelentkezés</button>
         </div>
     </div>
@@ -305,7 +306,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -381,7 +382,7 @@
             document.getElementById('app-container').classList.remove('active');
             document.querySelector('.stats-bar').style.display = 'none';
             document.body.style.justifyContent = 'center';
-            closeSettingsModal();
+            window.closeSettingsModal();
         }
     });
 
@@ -422,11 +423,11 @@
             querySnapshot.forEach((doc) => allWords.push({ id: doc.id, ...doc.data() }));
             allWords.sort((a, b) => b.createdAt - a.createdAt);
 
-            updateLangLists();
-            filterAndRenderCards();
+            window.updateLangLists();
+            window.filterAndRenderCards();
 
             if(document.getElementById('view-test').classList.contains('active')) {
-                initTest();
+                window.initTest();
             }
         } catch (e) { console.error(e); }
     }
@@ -456,26 +457,29 @@
         
         ['learn-lang-select', 'test-lang-select', 'archive-lang-select'].forEach(id => {
             const el = document.getElementById(id);
-            const prev = el.value;
-            el.innerHTML = langs.map(l => `<option value="${l}">${l}</option>`).join('');
-            if (langs.includes(prev)) el.value = prev; else if(langs.length > 0) el.value = langs[0];
+            if(el) {
+                const prev = el.value;
+                el.innerHTML = langs.map(l => `<option value="${l}">${l}</option>`).join('');
+                if (langs.includes(prev)) el.value = prev; else if(langs.length > 0) el.value = langs[0];
+            }
         });
 
         const addSelect = document.getElementById('new-lang-select');
-        const lastLang = localStorage.getItem('last_used_lang');
-        
-        let addHtml = langs.map(l => `<option value="${l}">${l}</option>`).join('');
-        addHtml += `<option value="new" style="font-weight:bold; color:var(--primary);">+ Új nyelv hozzáadása</option>`;
-        addSelect.innerHTML = addHtml;
-        
-        if (lastLang && langs.includes(lastLang)) {
-            addSelect.value = lastLang;
-        } else if (langs.length > 0) {
-            addSelect.value = langs[0];
-        } else {
-            addSelect.value = 'new';
+        if(addSelect) {
+            const lastLang = localStorage.getItem('last_used_lang');
+            let addHtml = langs.map(l => `<option value="${l}">${l}</option>`).join('');
+            addHtml += `<option value="new" style="font-weight:bold; color:var(--primary);">+ Új nyelv hozzáadása</option>`;
+            addSelect.innerHTML = addHtml;
+            
+            if (lastLang && langs.includes(lastLang)) {
+                addSelect.value = lastLang;
+            } else if (langs.length > 0) {
+                addSelect.value = langs[0];
+            } else {
+                addSelect.value = 'new';
+            }
+            window.handleLangSelectChange(); 
         }
-        handleLangSelectChange(); 
     };
 
     window.addWord = async () => {
@@ -494,7 +498,9 @@
             document.getElementById('inp-sentence').value = '';
             document.getElementById('new-lang-input').value = '';
             
-            updateLangLists(); filterAndRenderCards(); alert("Mentve!");
+            window.updateLangLists(); 
+            window.filterAndRenderCards(); 
+            alert("Mentve!");
             document.getElementById('inp-word').focus();
         } catch (e) { alert("Hiba: " + e.message); }
     };
@@ -520,7 +526,9 @@
             await batch.commit(); 
             document.getElementById('inp-bulk').value = ''; 
             document.getElementById('new-lang-input').value = '';
-            updateLangLists(); filterAndRenderCards(); alert("Import kész!"); 
+            window.updateLangLists(); 
+            window.filterAndRenderCards(); 
+            alert("Import kész!"); 
         }
     };
 
@@ -533,7 +541,9 @@
             await updateDoc(doc(db, "words", id), { word: newWord, meaning: newMeaning, sentence: newSentence });
             const idx = allWords.findIndex(w => w.id === id);
             if(idx !== -1) { allWords[idx].word = newWord; allWords[idx].meaning = newMeaning; allWords[idx].sentence = newSentence; }
-            closeEditModal(); filterAndRenderCards(); renderArchive();
+            window.closeEditModal(); 
+            window.filterAndRenderCards(); 
+            window.renderArchive();
         } catch(e) { alert("Hiba: " + e.message); }
     };
 
@@ -543,7 +553,9 @@
         try {
             await deleteDoc(doc(db, "words", id));
             allWords = allWords.filter(w => w.id !== id);
-            closeEditModal(); filterAndRenderCards(); renderArchive();
+            window.closeEditModal(); 
+            window.filterAndRenderCards(); 
+            window.renderArchive();
         } catch(e) { alert("Hiba: " + e.message); }
     };
 
@@ -553,7 +565,7 @@
         const w = allWords.find(x => x.id === id);
         if(!w) return;
         w.learned = true;
-        filterAndRenderCards();
+        window.filterAndRenderCards();
         try { await updateDoc(doc(db, "words", id), { learned: true }); } catch(err){console.error(err);}
     };
 
@@ -562,7 +574,8 @@
         const w = allWords.find(i => i.id === id);
         if(!w) return;
         w.learned = false;
-        renderArchive(); filterAndRenderCards();
+        window.renderArchive(); 
+        window.filterAndRenderCards();
         try { await updateDoc(doc(db, "words", id), { learned: false }); } catch(err){console.error(err);}
     };
 
@@ -576,16 +589,19 @@
         }
     };
 
-    window.nextCard = (e) => { if(e) e.stopPropagation(); if(activeWords.length) { currentIndex = (currentIndex + 1) % activeWords.length; renderLearnArea(); }};
-    window.prevCard = (e) => { if(e) e.stopPropagation(); if(activeWords.length) { currentIndex = (currentIndex - 1 + activeWords.length) % activeWords.length; renderLearnArea(); }};
+    window.nextCard = (e) => { if(e) e.stopPropagation(); if(activeWords.length) { currentIndex = (currentIndex + 1) % activeWords.length; window.renderLearnArea(); }};
+    window.prevCard = (e) => { if(e) e.stopPropagation(); if(activeWords.length) { currentIndex = (currentIndex - 1 + activeWords.length) % activeWords.length; window.renderLearnArea(); }};
 
     window.filterAndRenderCards = () => {
-        const lang = document.getElementById('learn-lang-select').value;
+        const langEl = document.getElementById('learn-lang-select');
+        if(!langEl) return;
+        const lang = langEl.value;
         activeWords = allWords.filter(w => w.lang === lang && w.learned !== true);
         currentIndex = 0;
-        renderLearnArea();
+        window.renderLearnArea();
     };
-	window.toggleLearnSearch = () => {
+
+    window.toggleLearnSearch = () => {
         const container = document.getElementById('learn-search-container');
         const input = document.getElementById('learn-search-input');
         if (container.style.display === 'none' || container.style.display === '') {
@@ -594,23 +610,28 @@
         } else {
             container.style.display = 'none';
             input.value = ''; // Töröljük a beírt szöveget
-            renderLearnArea(); // Újrarendereljük a kártyákat szűrés nélkül
+            window.renderLearnArea(); // Újrarendereljük a kártyákat szűrés nélkül
         }
     };
+
     window.renderLearnArea = () => {
         const area = document.getElementById('flashcard-area');
         const counter = document.getElementById('card-counter');
         const searchContainer = document.getElementById('learn-search-container');
         const searchBtn = document.getElementById('btn-toggle-search');
-        const searchInput = document.getElementById('learn-search-input').value.toLowerCase();
         
+        const searchInputEl = document.getElementById('learn-search-input');
+        const searchInput = searchInputEl ? searchInputEl.value.toLowerCase() : '';
+        
+        if (!area || !counter) return;
+
         // Keresés nagyító gombjának mutatása/elrejtése
         if (isLearnGridView && activeWords.length > 0) {
-            searchBtn.style.display = 'flex';
+            if(searchBtn) searchBtn.style.display = 'flex';
         } else {
-            searchBtn.style.display = 'none';
-            searchContainer.style.display = 'none'; // Rejtjük a sávot, ha átlépünk egyes nézetbe
-            document.getElementById('learn-search-input').value = ''; 
+            if(searchBtn) searchBtn.style.display = 'none';
+            if(searchContainer) searchContainer.style.display = 'none';
+            if(searchInputEl) searchInputEl.value = ''; 
         }
 
         if(!activeWords.length) { 
@@ -676,11 +697,13 @@
     }
 
     // --- ARCHÍVUM ---
-    window.nextArchive = (e) => { if(e) e.stopPropagation(); if(archivedWords.length) { archiveIndex = (archiveIndex + 1) % archivedWords.length; renderArchive(); }};
-    window.prevArchive = (e) => { if(e) e.stopPropagation(); if(archivedWords.length) { archiveIndex = (archiveIndex - 1 + archivedWords.length) % archivedWords.length; renderArchive(); }};
+    window.nextArchive = (e) => { if(e) e.stopPropagation(); if(archivedWords.length) { archiveIndex = (archiveIndex + 1) % archivedWords.length; window.renderArchive(); }};
+    window.prevArchive = (e) => { if(e) e.stopPropagation(); if(archivedWords.length) { archiveIndex = (archiveIndex - 1 + archivedWords.length) % archivedWords.length; window.renderArchive(); }};
 
     window.renderArchive = () => {
-        const lang = document.getElementById('archive-lang-select').value;
+        const langEl = document.getElementById('archive-lang-select');
+        if(!langEl) return;
+        const lang = langEl.value;
         archivedWords = allWords.filter(w => w.lang === lang && w.learned === true);
         const area = document.getElementById('archive-area');
         document.getElementById('archive-counter').textContent = `Archivált: ${archivedWords.length}`;
@@ -728,9 +751,9 @@
         document.getElementById(`view-${tab}`).classList.add('active');
         document.getElementById(`tab-${tab}`).classList.add('active');
         
-        if(tab === 'test') initTest(); 
-        if(tab === 'learn') filterAndRenderCards(); 
-        if(tab === 'archive') renderArchive();
+        if(tab === 'test') window.initTest(); 
+        if(tab === 'learn') window.filterAndRenderCards(); 
+        if(tab === 'archive') window.renderArchive();
         if(tab === 'add') {
             setTimeout(() => {
                 const inputElement = document.getElementById('inp-word');
@@ -755,20 +778,45 @@
     window.closeSettingsModal = () => document.getElementById('settings-modal').classList.remove('open');
 
     // --- BEÁLLÍTÁSOK LOGIKÁJA ---
-    // Az alapértelmezett beállítás mostantól 'true' (ha nem létezik 'false'-ként a storage-ban)
     let isLearnGridView = localStorage.getItem('learn_grid_view') !== 'false';
+    window.isDeeplPopup = localStorage.getItem('deepl_popup') !== 'false';
 
     window.toggleLearnViewMode = () => {
         isLearnGridView = !isLearnGridView;
         localStorage.setItem('learn_grid_view', isLearnGridView);
-        updateViewBtnText();
-        filterAndRenderCards();
+        window.updateViewBtnText();
+        window.filterAndRenderCards();
     };
 
-    function updateViewBtnText() {
+    window.toggleDeeplPopup = () => {
+        window.isDeeplPopup = !window.isDeeplPopup;
+        localStorage.setItem('deepl_popup', window.isDeeplPopup);
+        window.updateDeeplBtnText();
+    };
+
+    window.updateViewBtnText = () => {
         const btn = document.getElementById('modal-view-btn');
         if(btn) btn.textContent = isLearnGridView ? '🔳 Egyes nézet (Fókuszált)' : '🔲 Rács nézet (Összes)';
-    }
+    };
+
+    window.updateDeeplBtnText = () => {
+        const btn = document.getElementById('modal-deepl-btn');
+        if(btn) btn.textContent = window.isDeeplPopup ? '🌐 DeepL: Felugró ablak' : '🌐 DeepL: Új lap (Tab)';
+    };
+
+    window.openDeepl = () => {
+        const w = document.getElementById('inp-word').value.trim();
+        if(w) {
+            const url = 'https://www.deepl.com/translator?share=generic#en/hu/' + encodeURIComponent(w);
+            if (window.isDeeplPopup) {
+                window.open(url, 'DeepLPopup', 'width=800,height=700,left=200,top=100,resizable=yes,scrollbars=yes');
+            } else {
+                window.open(url, '_blank');
+            }
+        } else {
+            alert('Kérlek, írj be egy szót előbb!');
+        }
+    };
 
     // --- TÉMA KEZELÉSE ---
     window.toggleTheme = () => {
@@ -792,16 +840,19 @@
         if (themeBtnModal) themeBtnModal.textContent = '☀️ Világos mód';
         localStorage.setItem('theme', 'dark');
     }
-    updateViewBtnText();
+    window.updateViewBtnText();
+    window.updateDeeplBtnText();
 
     // --- TEST MODE ---
     window.initTest = () => {
-        const lang = document.getElementById('test-lang-select').value;
+        const langEl = document.getElementById('test-lang-select');
+        if(!langEl) return;
+        const lang = langEl.value;
         testList = allWords.filter(w => w.lang === lang && w.learned !== true).sort(() => Math.random() - 0.5);
         testIndex = 0;
         revealedHints = [];
         hintCountForCurrentWord = 0;
-        renderTest();
+        window.renderTest();
     };
 
     window.renderTest = () => {
@@ -816,7 +867,7 @@
         }
 
         const item = testList[testIndex];
-        if(!item) { testIndex = 0; initTest(); return; }
+        if(!item) { testIndex = 0; window.initTest(); return; }
 
         revealedHints = [];
         hintCountForCurrentWord = 0;
@@ -836,9 +887,11 @@
         `;
 
         const input = document.getElementById('test-input');
-        input.focus();
-        input.addEventListener('keypress', e => { if(e.key === 'Enter') checkAnswer(); });
-        updateVisuals();
+        if(input) {
+            input.focus();
+            input.addEventListener('keypress', e => { if(e.key === 'Enter') window.checkAnswer(); });
+        }
+        window.updateVisuals();
     };
 
     window.triggerHint = () => {
@@ -857,7 +910,7 @@
             for(let i=0; i<t.length; i++) if(!revealedHints.includes(i) && t[i]!==' ' && t[i]!==',') unrevealed.push(i);
             if(unrevealed.length > 0) revealedHints.push(unrevealed[Math.floor(Math.random()*unrevealed.length)]);
         }
-        updateVisuals();
+        window.updateVisuals();
         document.getElementById('test-input').focus();
     };
 
@@ -875,11 +928,13 @@
         res.style.color = 'var(--error)';
         res.innerHTML = `A helyes válasz: <br><span style="font-size:1.2rem; color:var(--text-main);">${fullMeaning}</span>`;
         for(let i=0; i<fullMeaning.length; i++) if(!revealedHints.includes(i)) revealedHints.push(i);
-        updateVisuals();
+        window.updateVisuals();
     };
 
     window.updateVisuals = () => {
-        const inputVal = document.getElementById('test-input').value;
+        const inputEl = document.getElementById('test-input');
+        if(!inputEl) return;
+        const inputVal = inputEl.value;
         const fullMeaning = testList[testIndex].meaning;
         const userParts = inputVal.split(',').map(p => p.trim());
         const targetParts = fullMeaning.split(',').map(p => p.trim());
@@ -952,7 +1007,7 @@
         }
     };
 
-    window.nextTestItem = () => { testIndex++; renderTest(); };
+    window.nextTestItem = () => { testIndex++; window.renderTest(); };
 </script>
 </body>
 </html>
