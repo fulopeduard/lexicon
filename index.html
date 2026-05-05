@@ -211,10 +211,20 @@
 
     <section id="view-learn" class="view-section active">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; max-width: 500px; margin-left: auto; margin-right: auto;">
-            <select id="learn-lang-select" onchange="filterAndRenderCards()" style="width: auto; margin:0; padding: 8px 16px;"></select>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <select id="learn-lang-select" onchange="filterAndRenderCards()" style="width: auto; margin:0; padding: 8px 16px;"></select>
+                <button id="btn-toggle-search" class="icon-btn" style="display: none; padding: 8px 12px; margin: 0; font-size: 1rem;" onclick="toggleLearnSearch()" title="Kereső megjelenítése/elrejtése">🔍</button>
+            </div>
             <span id="card-counter" style="color: var(--text-sub); font-weight: 600;">0 / 0</span>
         </div>
-        <div id="flashcard-area"></div>
+
+                <div id="learn-search-container" style="display: none; max-width: 500px; margin: 0 auto 20px auto; width: 100%; animation: slideUp 0.3s;">
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="learn-search-input" placeholder="Keresés szó vagy jelentés alapján..." oninput="renderLearnArea()" style="margin-bottom: 0; flex: 1;">
+                <button class="btn-secondary" style="width: auto; padding: 0 15px;" onclick="toggleLearnSearch()" title="Keresés bezárása">✖</button>
+            </div>
+        </div>
+                <div id="flashcard-area"></div>
     </section>
 
     <section id="view-test" class="view-section">
@@ -575,11 +585,34 @@
         currentIndex = 0;
         renderLearnArea();
     };
-
+	window.toggleLearnSearch = () => {
+        const container = document.getElementById('learn-search-container');
+        const input = document.getElementById('learn-search-input');
+        if (container.style.display === 'none' || container.style.display === '') {
+            container.style.display = 'block';
+            input.focus();
+        } else {
+            container.style.display = 'none';
+            input.value = ''; // Töröljük a beírt szöveget
+            renderLearnArea(); // Újrarendereljük a kártyákat szűrés nélkül
+        }
+    };
     window.renderLearnArea = () => {
         const area = document.getElementById('flashcard-area');
         const counter = document.getElementById('card-counter');
+        const searchContainer = document.getElementById('learn-search-container');
+        const searchBtn = document.getElementById('btn-toggle-search');
+        const searchInput = document.getElementById('learn-search-input').value.toLowerCase();
         
+        // Keresés nagyító gombjának mutatása/elrejtése
+        if (isLearnGridView && activeWords.length > 0) {
+            searchBtn.style.display = 'flex';
+        } else {
+            searchBtn.style.display = 'none';
+            searchContainer.style.display = 'none'; // Rejtjük a sávot, ha átlépünk egyes nézetbe
+            document.getElementById('learn-search-input').value = ''; 
+        }
+
         if(!activeWords.length) { 
             area.innerHTML = `<div class="test-card"><p>Nincs aktív tanulnivaló.</p></div>`; 
             area.className = '';
@@ -589,8 +622,20 @@
 
         if(isLearnGridView) {
             area.className = 'grid-mode';
-            counter.textContent = `Összes: ${activeWords.length}`;
-            area.innerHTML = activeWords.map(w => generateCardHTML(w, true)).join('');
+            
+            // Szűrés a keresőmezőbe beírt szöveg alapján
+            const filteredWords = activeWords.filter(w => 
+                w.word.toLowerCase().includes(searchInput) || 
+                w.meaning.toLowerCase().includes(searchInput)
+            );
+
+            counter.textContent = `Összes: ${filteredWords.length} / ${activeWords.length}`;
+            
+            if (filteredWords.length === 0) {
+                area.innerHTML = `<div class="test-card" style="grid-column: 1 / -1;"><p>Nincs találat erre: "${searchInput}"</p></div>`;
+            } else {
+                area.innerHTML = filteredWords.map(w => generateCardHTML(w, true)).join('');
+            }
         } else {
             area.className = 'single-mode';
             if(currentIndex >= activeWords.length) currentIndex = 0;
