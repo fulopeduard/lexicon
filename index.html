@@ -809,7 +809,14 @@
         if(w) {
             const url = 'https://www.deepl.com/translator?share=generic#en/hu/' + encodeURIComponent(w);
             if (window.isDeeplPopup) {
-                window.open(url, 'DeepLPopup', 'width=800,height=700,left=200,top=100,resizable=yes,scrollbars=yes');
+                // Megpróbáljuk popupként megnyitni
+                const popup = window.open(url, 'DeepLPopup', 'width=800,height=700,left=200,top=100,resizable=yes,scrollbars=yes');
+                
+                // Ha a böngésző (pl. Vivaldi Web Panel vagy popup blokkoló) megakadályozza, 
+                // a popup null vagy undefined lesz. Ilyenkor megnyitjuk sima új fülön.
+                if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+                    window.open(url, '_blank');
+                }
             } else {
                 window.open(url, '_blank');
             }
