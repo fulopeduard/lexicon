@@ -249,7 +249,7 @@
             <div id="add-single" style="width: 100%;">
                 <div style="display: flex; gap: 10px; margin-bottom: 15px; width: 100%;">
                     <input type="text" id="inp-word" placeholder="Idegen szó (pl. Run)" style="margin-bottom: 0; flex-grow: 1; width: 100%;">
-                    <button class="btn-secondary" style="width: 60px; flex-shrink: 0; padding: 0; font-size: 1.4rem; display: flex; align-items: center; justify-content: center; margin-bottom: 0;" onclick="const w = document.getElementById('inp-word').value.trim(); if(w) { window.open('https://www.deepl.com/translator?share=generic#en/hu/' + encodeURIComponent(w), '_blank'); } else { alert('Kérlek, írj be egy szót előbb!'); }" title="Megnyitás DeepL-ben">🌐</button>
+                    <button class="btn-secondary" style="width: 60px; flex-shrink: 0; padding: 0; font-size: 1.4rem; display: flex; align-items: center; justify-content: center; margin-bottom: 0;" onclick="const w = document.getElementById('inp-word').value.trim(); if(w) { window.open('https://www.deepl.com/translator?share=generic#en/hu/' + encodeURIComponent(w), 'DeepLPopup', 'width=800,height=700,left=200,top=100,resizable=yes,scrollbars=yes'); } else { alert('Kérlek, írj be egy szót előbb!'); }" title="Megnyitás DeepL-ben">🌐</button>
                 </div>
                 <input type="text" id="inp-meaning" placeholder="Jelentés (pl. Fut, szalad)">
                 <textarea id="inp-sentence" placeholder="Példamondat (Opcionális)" rows="2"></textarea>
