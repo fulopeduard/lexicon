@@ -141,7 +141,7 @@
         .card-actions-inline button:active { transform: scale(0.95); }
 
         /* TEST MODE */
-        .test-card { background: var(--bg-card); padding: 30px; border-radius: var(--radius); text-align: center; border: 1px solid var(--border); width: 100%; max-width: 500px; margin: 0 auto; }
+        .test-card { background: var(--bg-card); padding: 30px; border-radius: var(--radius); text-align: center; border: 1px solid var(--border); width: 100%; max-width: 500px; margin: 0 auto; position: relative; }
         .dynamic-display { font-family: monospace; font-size: 1.6rem; letter-spacing: 2px; margin: 25px 0; min-height: 40px; word-wrap: break-word; }
         .char-correct { color: var(--success); font-weight: bold; border-bottom: 2px solid var(--success); }
         .char-wrong { color: var(--error); font-weight: bold; border-bottom: 2px solid var(--error); }
@@ -307,8 +307,11 @@
 
             <div style="background: var(--bg-input); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
                 <h4 style="margin-bottom: 10px; color: var(--primary); font-size: 1rem;">🎯 Automatikus Archiválás</h4>
-                <label style="display: flex; align-items: center; gap: 10px; font-size: 0.9rem; margin-bottom: 15px; font-weight: bold; cursor: pointer;">
+                <label style="display: flex; align-items: center; gap: 10px; font-size: 0.9rem; margin-bottom: 10px; font-weight: bold; cursor: pointer;">
                     <input type="checkbox" id="set-auto-archive" onchange="window.saveDetailedSettings()" style="width: auto; margin: 0; transform: scale(1.2);"> Funkció bekapcsolva
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; margin-bottom: 15px; color: var(--text-sub); cursor: pointer;">
+                    <input type="checkbox" id="set-show-streak-test" onchange="window.saveDetailedSettings()" style="width: auto; margin: 0;"> Archiválási széria mutatása teszt közben
                 </label>
                 <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
                     <span>Sikeres, hibátlan beírások száma:</span>
@@ -369,26 +372,30 @@
     let userStreak = 0;
     let userMaxStreak = 0;
     
-    // NEW SETTINGS & LOGIC
-    window.currentTestErrorCount = 0; // Betűhibák számlálása
+    // SETTINGS & LOGIC
+    window.currentTestErrorCount = 0; 
     window.autoArchiveEnabled = localStorage.getItem('auto_archive_enabled') === 'true';
+    window.showStreakInTest = localStorage.getItem('show_streak_in_test') === 'true'; 
     window.autoArchiveThreshold = parseInt(localStorage.getItem('auto_archive_threshold')) || 3;
     window.autoRestoreEnabled = localStorage.getItem('auto_restore_enabled') === 'true';
     window.autoRestoreDays = parseInt(localStorage.getItem('auto_restore_days')) || 30;
     window.testModeReverse = localStorage.getItem('test_mode_reverse') === 'true';
 
     document.getElementById('set-auto-archive').checked = window.autoArchiveEnabled;
+    document.getElementById('set-show-streak-test').checked = window.showStreakInTest; 
     document.getElementById('set-archive-threshold').value = window.autoArchiveThreshold;
     document.getElementById('set-auto-restore').checked = window.autoRestoreEnabled;
     document.getElementById('set-restore-days').value = window.autoRestoreDays;
 
     window.saveDetailedSettings = () => {
         window.autoArchiveEnabled = document.getElementById('set-auto-archive').checked;
+        window.showStreakInTest = document.getElementById('set-show-streak-test').checked; 
         window.autoArchiveThreshold = parseInt(document.getElementById('set-archive-threshold').value) || 3;
         window.autoRestoreEnabled = document.getElementById('set-auto-restore').checked;
         window.autoRestoreDays = parseInt(document.getElementById('set-restore-days').value) || 30;
 
         localStorage.setItem('auto_archive_enabled', window.autoArchiveEnabled);
+        localStorage.setItem('show_streak_in_test', window.showStreakInTest); 
         localStorage.setItem('auto_archive_threshold', window.autoArchiveThreshold);
         localStorage.setItem('auto_restore_enabled', window.autoRestoreEnabled);
         localStorage.setItem('auto_restore_days', window.autoRestoreDays);
@@ -483,7 +490,8 @@
             if (window.autoRestoreEnabled) {
                 allWords.forEach(w => {
                     if (w.learned && w.archivedAt) {
-                        const daysPassed = (now - w.archivedAt) / (1000 * 60 * 60 * 24);
+                        const msInDay = 1000 * 60 * 60 * 24;
+                        const daysPassed = Math.floor((now - w.archivedAt) / msInDay);
                         if (daysPassed >= window.autoRestoreDays) {
                             w.learned = false;
                             w.perfectStreak = 0;
@@ -736,6 +744,16 @@
         if(archiveIndex >= archivedWords.length) archiveIndex = 0;
         area.className = 'single-mode';
         const w = archivedWords[archiveIndex];
+        
+        // --- ÚJ RÉSZ: Hátralévő napok kiszámítása ---
+        let restoreInfo = '';
+        if (window.autoRestoreEnabled && w.archivedAt) {
+            const msInDay = 1000 * 60 * 60 * 24;
+            const daysLeft = Math.ceil((w.archivedAt + window.autoRestoreDays * msInDay - Date.now()) / msInDay);
+            const displayDays = daysLeft > 0 ? daysLeft : 0;
+            restoreInfo = `<div style="margin-top: 10px; font-size: 0.85rem; color: var(--text-sub);">⏳ Újraaktíválódik: <strong style="color:var(--primary)">${displayDays} nap</strong> múlva</div>`;
+        }
+
         area.innerHTML = `
             <div class="card-container" onclick="flipThisCard(event, this)">
                 <div class="card">
@@ -750,6 +768,7 @@
                     </div>
                     <div class="card-face card-back" style="border:2px solid var(--success)">
                         <h3>${w.meaning}</h3>
+                        ${restoreInfo}
                         <button class="btn-secondary" style="margin-top:10px; width:auto; padding: 6px 16px; border-radius: 20px;" onclick="restoreFromArchive('${w.id}', event)">Visszaállít ↺</button>
                         <div class="card-actions-inline" onclick="event.stopPropagation()">
                             <button onclick="prevArchive(event)">←</button>
@@ -850,13 +869,22 @@
         const item = testList[testIndex];
         if(!item) { testIndex = 0; window.initTest(); return; }
         revealedHints = []; hintCountForCurrentWord = 0;
-        window.currentTestErrorCount = 0; // Hiba számláló nullázása
+        window.currentTestErrorCount = 0; 
 
         const promptLabel = window.testModeReverse ? "Idegen szó?" : "Jelentés?";
         const displayWord = window.testModeReverse ? item.meaning : item.word;
 
+        let streakBadge = '';
+        if (window.autoArchiveEnabled && window.showStreakInTest) {
+            const currentStreak = item.perfectStreak || 0;
+            streakBadge = `<span style="font-size:0.75rem; color:var(--text-sub); background:var(--bg-body); padding:4px 8px; border-radius:8px; border:1px solid var(--border); font-weight:bold;">🎯 ${currentStreak}/${window.autoArchiveThreshold}</span>`;
+        }
+
         div.innerHTML = `
-            <p style="color:var(--text-sub)">${promptLabel}</p>
+            <div style="display:flex; justify-content:center; align-items:center; position:relative; margin-bottom:10px; min-height:25px;">
+                <p style="color:var(--text-sub); margin:0;">${promptLabel}</p>
+                ${streakBadge ? `<div style="position:absolute; right:0;">${streakBadge}</div>` : ''}
+            </div>
             <h2 style="font-size:2rem; margin-bottom:15px;">${displayWord}</h2>
             <div class="test-controls">
                 <button class="btn-secondary" style="font-size:0.8rem; width:auto;" onclick="window.triggerHint()" id="btn-hint">💡 Súgás</button>
@@ -880,7 +908,7 @@
     window.triggerHint = () => {
         if (hintCountForCurrentWord >= 3) { if(!confirm("A 4. hint nullázza a streak-et. Biztosan?")) return; userStreak = 0; saveStats(); }
         hintCountForCurrentWord++;
-        window.currentTestErrorCount = 99; // Hint kérés esetén nem számít tökéletesnek
+        window.currentTestErrorCount = 99; 
 
         const t = window.testModeReverse ? testList[testIndex].word : testList[testIndex].meaning;
         if(revealedHints.length === 0) {
@@ -1005,7 +1033,7 @@
             if(userStreak > userMaxStreak) userMaxStreak = userStreak;
             saveStats();
 
-            let isWithinTolerance = window.currentTestErrorCount <= 1; // 1 hiba még belefér
+            let isWithinTolerance = window.currentTestErrorCount <= 1; 
             let justArchived = false;
             let currentPerfectStreak = (currentWord.perfectStreak || 0);
 
@@ -1025,7 +1053,6 @@
                     updateDoc(doc(db, "words", currentWord.id), { perfectStreak: currentPerfectStreak });
                 }
             } else {
-                // Túl sok hiba (több mint 1) vagy kikapcsolt funkció
                 currentPerfectStreak = 0;
                 const wIdx = allWords.findIndex(w => w.id === currentWord.id);
                 if (wIdx > -1) allWords[wIdx].perfectStreak = 0;
