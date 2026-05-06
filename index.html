@@ -869,7 +869,7 @@
             return;
         }
         if(testIndex >= testList.length) {
-            div.innerHTML = `<h3>Vége! 🎉</h3><p>Pontszám: ${userPoints}</p><button class="btn-primary" onclick="initTest()">Újra</button>`;
+            div.innerHTML = `<h3>Vége! 🎉</h3><p>Pontszám: ${userPoints}</p><button class="btn-primary" onclick="window.initTest()">Újra</button>`;
             return;
         }
 
@@ -883,19 +883,21 @@
             <p style="color:var(--text-sub)">Jelentés?</p>
             <h2 style="font-size:2rem; margin-bottom:15px;">${item.word}</h2>
             <div class="test-controls">
-                <button class="btn-secondary" style="font-size:0.8rem; width:auto;" onclick="triggerHint()" id="btn-hint">💡 Súgás</button>
-                <button class="btn-danger" style="font-size:0.8rem; width:auto;" onclick="giveUp()" id="btn-giveup">Megoldás</button>
+                <button class="btn-secondary" style="font-size:0.8rem; width:auto;" onclick="window.triggerHint()" id="btn-hint">💡 Súgás</button>
+                <button class="btn-danger" style="font-size:0.8rem; width:auto;" onclick="window.giveUp()" id="btn-giveup">Megoldás</button>
             </div>
             <div id="dynamic-display" class="dynamic-display"></div>
-            <input type="text" id="test-input" placeholder="Írd be a jelentést..." oninput="updateVisuals()" autocomplete="off">
+            <input type="text" id="test-input" placeholder="Írd be a jelentést..." autocomplete="off">
             <div id="res-box" style="display:none; padding:15px; margin-top:10px; font-weight:bold; background:var(--bg-input); border-radius:12px;"></div>
-            <button class="btn-primary" onclick="checkAnswer()" id="btn-check" style="margin-top:15px;">Ellenőrzés</button>
-            <button class="btn-secondary hidden" onclick="nextTestItem()" id="btn-next" style="width:100%; margin-top:10px;">Tovább</button>
+            <button class="btn-primary" onclick="window.checkAnswer()" id="btn-check" style="margin-top:15px;">Ellenőrzés</button>
+            <button class="btn-secondary hidden" onclick="window.nextTestItem()" id="btn-next" style="width:100%; margin-top:10px;">Tovább</button>
         `;
 
         const input = document.getElementById('test-input');
         if(input) {
             input.focus();
+            // Itt figyeljük a gépelést élőben (ez oldja meg a hibát!)
+            input.addEventListener('input', window.updateVisuals);
             input.addEventListener('keypress', e => { if(e.key === 'Enter') window.checkAnswer(); });
         }
         window.updateVisuals();
@@ -943,40 +945,89 @@
         if(!inputEl) return;
         const inputVal = inputEl.value;
         const fullMeaning = testList[testIndex].meaning;
+        
+        // A beírt és a cél szöveg feldarabolása vesszők mentén
         const userParts = inputVal.split(',').map(p => p.trim());
-        const targetParts = fullMeaning.split(',').map(p => p.trim());
+        const targetParts = fullMeaning.split(',');
+        
+        // Összepárosítjuk a beírt szavakat a cél szavakkal a legjobb egyezés alapján
         const targetMap = new Array(targetParts.length).fill(null);
 
         userParts.forEach(uPart => {
             if(!uPart) return;
-            const idx = targetParts.findIndex((t, i) => !targetMap[i] && t.toLowerCase().startsWith(uPart.toLowerCase()));
-            if(idx !== -1) targetMap[idx] = uPart;
+            let bestMatchIdx = -1;
+            let maxMatchLen = -1;
+            
+            for (let i = 0; i < targetParts.length; i++) {
+                if (targetMap[i] !== null) continue; // Ha már párosítva van, kihagyjuk
+                
+                const tLower = targetParts[i].trim().toLowerCase();
+                const uLower = uPart.toLowerCase();
+                let matchLen = 0;
+                
+                // Megnézzük hány karakter egyezik sorban
+                while(matchLen < uLower.length && matchLen < tLower.length && uLower[matchLen] === tLower[matchLen]) {
+                    matchLen++;
+                }
+                
+                // Azt a szót választjuk, amivel a legtöbb a közös karakter
+                if (matchLen > maxMatchLen) {
+                    maxMatchLen = matchLen;
+                    bestMatchIdx = i;
+                }
+            }
+            
+            if (bestMatchIdx !== -1) {
+                targetMap[bestMatchIdx] = uPart;
+            }
         });
 
         let html = '';
         let currentTargetIdx = 0;
-        let charInCurrentTarget = 0;
+        let charInUserText = 0;
 
-        for(let i=0; i<fullMeaning.length; i++) {
+        for(let i = 0; i < fullMeaning.length; i++) {
             const char = fullMeaning[i];
-            if(char === ',') { html += `<span>,</span>`; currentTargetIdx++; charInCurrentTarget = 0; continue; }
-            if(char === ' ' && charInCurrentTarget === 0 && currentTargetIdx > 0) { html += `<span>&nbsp;</span>`; continue; }
-            if(char === ' ') { html += `<span>&nbsp;</span>`; charInCurrentTarget++; continue; }
 
-            const userTextForThisBlock = targetMap[currentTargetIdx];
+            // Vesszők és szóközök vizuális kezelése
+            if(char === ',') { 
+                html += `<span>,</span>`; 
+                currentTargetIdx++; 
+                charInUserText = 0; 
+                continue; 
+            }
+            if(char === ' ' && charInUserText === 0 && currentTargetIdx > 0) { 
+                html += `<span>&nbsp;</span>`; 
+                continue; 
+            }
+
+            const uText = targetMap[currentTargetIdx];
             let displayHTML = `<span class="char-placeholder">_</span>`;
-            if(revealedHints.includes(i)) displayHTML = `<span class="char-hint">${char}</span>`;
+            
+            // Ha a hint aktiválva lett
+            if(revealedHints.includes(i)) {
+                displayHTML = `<span class="char-hint">${char === ' ' ? '&nbsp;' : char}</span>`;
+            }
 
-            if(userTextForThisBlock) {
-                if(charInCurrentTarget < userTextForThisBlock.length) {
-                    const uChar = userTextForThisBlock[charInCurrentTarget];
-                    const ok = uChar.toLowerCase() === char.toLowerCase();
-                    displayHTML = `<span class="${ok ? 'char-correct' : 'char-wrong'}">${uChar}</span>`;
+            // Ha a felhasználó gépelt ezen a helyen karaktert
+            if(uText && charInUserText < uText.length) {
+                const uChar = uText[charInUserText];
+                const isMatch = uChar.toLowerCase() === char.toLowerCase();
+                const displayChar = uChar === ' ' ? '&nbsp;' : uChar;
+                
+                // Döntés: Zöld (char-correct) vagy Piros (char-wrong)
+                displayHTML = `<span class="${isMatch ? 'char-correct' : 'char-wrong'}">${displayChar}</span>`;
+                charInUserText++;
+            } else if (char === ' ') {
+                // Ha szóköz jön a cél szóban, de a user még nem tart ott
+                if (!revealedHints.includes(i)) {
+                    displayHTML = `<span>&nbsp;</span>`;
                 }
             }
+
             html += displayHTML;
-            charInCurrentTarget++;
         }
+        
         document.getElementById('dynamic-display').innerHTML = html;
     };
 
