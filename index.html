@@ -764,10 +764,10 @@
                         <div class="card-face card-front" style="border:2px solid var(--success)">
                             <span style="position:absolute; top:15px; left:15px; font-size: 0.8rem; color:var(--success); font-weight:bold;">Archivált</span>
                             <h2>${w.word}</h2>
+                            ${restoreInfo}
                         </div>
                         <div class="card-face card-back" style="border:2px solid var(--success)">
                             <h3>${w.meaning}</h3>
-                            ${restoreInfo}
                             <button class="btn-secondary" style="margin-top:15px; width:auto; padding: 6px 16px; border-radius: 20px; font-size:0.9rem;" onclick="restoreFromArchive('${w.id}', event)">Visszaállít ↺</button>
                         </div>
                     </div>
