@@ -98,7 +98,7 @@
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
         /* KÁRTYÁK ÉS NÉZETEK */
-        #view-learn.active, #view-archive.active { width: 100%; max-width: 800px; } /* Szélesebb hely a rács miatt */
+        #view-learn.active, #view-archive.active { width: 100%; max-width: 800px; } 
 
         .single-mode { display: flex; justify-content: center; width: 100%; }
         .single-mode .card-container { width: 100%; max-width: 500px; height: 380px; }
@@ -109,9 +109,9 @@
         .card-container { perspective: 1200px; margin-bottom: 25px; cursor: pointer; }
         .card { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.7s; border-radius: var(--radius); box-shadow: var(--shadow); }
         .card.flipped { transform: rotateY(180deg); }
-        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--bg-card); border-radius: var(--radius); padding: 30px; text-align: center; border: 1px solid var(--border); padding-bottom: 70px; } /* Hely a beépített gomboknak */
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--bg-card); border-radius: var(--radius); padding: 30px; text-align: center; border: 1px solid var(--border); padding-bottom: 70px; } 
         
-        .grid-mode .card-face { padding: 20px; padding-bottom: 20px; } /* Kompakt nézetben kisebb padding */
+        .grid-mode .card-face { padding: 20px; padding-bottom: 20px; }
 
         .card-front h2 { font-size: 2.5rem; font-weight: 800; margin-bottom: 10px; }
         .grid-mode .card-front h2 { font-size: 1.8rem; }
@@ -228,7 +228,10 @@
     </section>
 
     <section id="view-test" class="view-section">
-        <select id="test-lang-select" onchange="window.initTest()" style="margin-bottom: 20px; max-width:500px; display:block; margin-left:auto; margin-right:auto;"></select>
+        <div style="display: flex; gap: 10px; max-width: 500px; margin: 0 auto 20px auto;">
+            <select id="test-lang-select" onchange="window.initTest()" style="margin-bottom: 0; flex: 1;"></select>
+            <button class="btn-secondary" id="btn-toggle-direction" onclick="window.toggleTestDirection()" style="width: auto; padding: 0 15px; font-size: 1.4rem;" title="Irány megfordítása">🔄</button>
+        </div>
         <div class="test-card">
             <div id="test-content"></div>
         </div>
@@ -349,7 +352,6 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // STATE
     let currentUser = null;
     let authMode = 'login';
     let allWords = [];
@@ -363,17 +365,17 @@
     let revealedHints = [];
     let hintCountForCurrentWord = 0;
 
-    // GAMIFICATION
     let userPoints = 0;
     let userStreak = 0;
     let userMaxStreak = 0;
     
     // NEW SETTINGS & LOGIC
-    window.currentTestPerfect = true;
+    window.currentTestErrorCount = 0; // Betűhibák számlálása
     window.autoArchiveEnabled = localStorage.getItem('auto_archive_enabled') === 'true';
     window.autoArchiveThreshold = parseInt(localStorage.getItem('auto_archive_threshold')) || 3;
     window.autoRestoreEnabled = localStorage.getItem('auto_restore_enabled') === 'true';
     window.autoRestoreDays = parseInt(localStorage.getItem('auto_restore_days')) || 30;
+    window.testModeReverse = localStorage.getItem('test_mode_reverse') === 'true';
 
     document.getElementById('set-auto-archive').checked = window.autoArchiveEnabled;
     document.getElementById('set-archive-threshold').value = window.autoArchiveThreshold;
@@ -390,6 +392,12 @@
         localStorage.setItem('auto_archive_threshold', window.autoArchiveThreshold);
         localStorage.setItem('auto_restore_enabled', window.autoRestoreEnabled);
         localStorage.setItem('auto_restore_days', window.autoRestoreDays);
+    };
+
+    window.toggleTestDirection = () => {
+        window.testModeReverse = !window.testModeReverse;
+        localStorage.setItem('test_mode_reverse', window.testModeReverse);
+        window.initTest();
     };
 
     window.toggleAuthMode = (mode) => {
@@ -437,7 +445,6 @@
         }
     });
 
-    // --- STATS LOGIC ---
     function loadStats() {
         if(!currentUser) return;
         const saved = localStorage.getItem(`lexicon_stats_${currentUser.uid}`);
@@ -464,7 +471,6 @@
         document.getElementById('stat-max-streak').textContent = userMaxStreak;
     }
 
-    // --- DB LOGIC ---
     async function fetchWords() {
         if(!currentUser) return;
         try {
@@ -473,7 +479,6 @@
             allWords = [];
             querySnapshot.forEach((doc) => allWords.push({ id: doc.id, ...doc.data() }));
             
-            // --- AUTO RESTORE LOGIC ---
             const now = Date.now();
             if (window.autoRestoreEnabled) {
                 allWords.forEach(w => {
@@ -489,17 +494,12 @@
             }
 
             allWords.sort((a, b) => b.createdAt - a.createdAt);
-
             window.updateLangLists();
             window.filterAndRenderCards();
-
-            if(document.getElementById('view-test').classList.contains('active')) {
-                window.initTest();
-            }
+            if(document.getElementById('view-test').classList.contains('active')) window.initTest();
         } catch (e) { console.error(e); }
     }
 
-    // --- NYELVEK KEZELÉSE ---
     window.handleLangSelectChange = () => {
         const select = document.getElementById('new-lang-select');
         const input = document.getElementById('new-lang-input');
@@ -521,7 +521,6 @@
 
     window.updateLangLists = () => {
         const langs = [...new Set(allWords.map(w => w.lang))];
-        
         ['learn-lang-select', 'test-lang-select', 'archive-lang-select'].forEach(id => {
             const el = document.getElementById(id);
             if(el) {
@@ -530,21 +529,15 @@
                 if (langs.includes(prev)) el.value = prev; else if(langs.length > 0) el.value = langs[0];
             }
         });
-
         const addSelect = document.getElementById('new-lang-select');
         if(addSelect) {
             const lastLang = localStorage.getItem('last_used_lang');
             let addHtml = langs.map(l => `<option value="${l}">${l}</option>`).join('');
             addHtml += `<option value="new" style="font-weight:bold; color:var(--primary);">+ Új nyelv hozzáadása</option>`;
             addSelect.innerHTML = addHtml;
-            
-            if (lastLang && langs.includes(lastLang)) {
-                addSelect.value = lastLang;
-            } else if (langs.length > 0) {
-                addSelect.value = langs[0];
-            } else {
-                addSelect.value = 'new';
-            }
+            if (lastLang && langs.includes(lastLang)) addSelect.value = lastLang;
+            else if (langs.length > 0) addSelect.value = langs[0];
+            else addSelect.value = 'new';
             window.handleLangSelectChange(); 
         }
     };
@@ -559,12 +552,10 @@
             const newDoc = { uid: currentUser.uid, lang, word: w, meaning: m, sentence: s, learned: false, perfectStreak: 0, createdAt: Date.now() };
             const docRef = await addDoc(collection(db, "words"), newDoc);
             allWords.unshift({ id: docRef.id, ...newDoc });
-            
             document.getElementById('inp-word').value = ''; 
             document.getElementById('inp-meaning').value = '';
             document.getElementById('inp-sentence').value = '';
             document.getElementById('new-lang-input').value = '';
-            
             window.updateLangLists(); 
             window.filterAndRenderCards(); 
             alert("Mentve!");
@@ -593,8 +584,7 @@
             await batch.commit(); 
             document.getElementById('inp-bulk').value = ''; 
             document.getElementById('new-lang-input').value = '';
-            window.updateLangLists(); 
-            window.filterAndRenderCards(); 
+            window.updateLangLists(); window.filterAndRenderCards(); 
             alert("Import kész!"); 
         }
     };
@@ -608,9 +598,7 @@
             await updateDoc(doc(db, "words", id), { word: newWord, meaning: newMeaning, sentence: newSentence });
             const idx = allWords.findIndex(w => w.id === id);
             if(idx !== -1) { allWords[idx].word = newWord; allWords[idx].meaning = newMeaning; allWords[idx].sentence = newSentence; }
-            window.closeEditModal(); 
-            window.filterAndRenderCards(); 
-            window.renderArchive();
+            window.closeEditModal(); window.filterAndRenderCards(); window.renderArchive();
         } catch(e) { alert("Hiba: " + e.message); }
     };
 
@@ -620,9 +608,7 @@
         try {
             await deleteDoc(doc(db, "words", id));
             allWords = allWords.filter(w => w.id !== id);
-            window.closeEditModal(); 
-            window.filterAndRenderCards(); 
-            window.renderArchive();
+            window.closeEditModal(); window.filterAndRenderCards(); window.renderArchive();
         } catch(e) { alert("Hiba: " + e.message); }
     };
 
@@ -631,8 +617,7 @@
         if(!confirm("Archiválod ezt a szót?")) return;
         const w = allWords.find(x => x.id === id);
         if(!w) return;
-        w.learned = true;
-        w.archivedAt = Date.now();
+        w.learned = true; w.archivedAt = Date.now();
         window.filterAndRenderCards();
         try { await updateDoc(doc(db, "words", id), { learned: true, archivedAt: Date.now() }); } catch(err){console.error(err);}
     };
@@ -641,14 +626,11 @@
         if(e) e.stopPropagation();
         const w = allWords.find(i => i.id === id);
         if(!w) return;
-        w.learned = false;
-        w.perfectStreak = 0;
-        window.renderArchive(); 
-        window.filterAndRenderCards();
+        w.learned = false; w.perfectStreak = 0;
+        window.renderArchive(); window.filterAndRenderCards();
         try { await updateDoc(doc(db, "words", id), { learned: false, perfectStreak: 0 }); } catch(err){console.error(err);}
     };
 
-    // --- KÁRTYÁK MEGJELENÍTÉSE ÉS LOGIKÁJA ---
     window.flipThisCard = (e, el) => {
         if(e) e.stopPropagation();
         const container = el.closest('.card-container');
@@ -678,8 +660,8 @@
             input.focus();
         } else {
             container.style.display = 'none';
-            input.value = ''; // Töröljük a beírt szöveget
-            window.renderLearnArea(); // Újrarendereljük a kártyákat szűrés nélkül
+            input.value = '';
+            window.renderLearnArea();
         }
     };
 
@@ -688,12 +670,9 @@
         const counter = document.getElementById('card-counter');
         const searchContainer = document.getElementById('learn-search-container');
         const searchBtn = document.getElementById('btn-toggle-search');
-        
         const searchInputEl = document.getElementById('learn-search-input');
         const searchInput = searchInputEl ? searchInputEl.value.toLowerCase() : '';
-        
         if (!area || !counter) return;
-
         if (isLearnGridView && activeWords.length > 0) {
             if(searchBtn) searchBtn.style.display = 'flex';
         } else {
@@ -701,29 +680,16 @@
             if(searchContainer) searchContainer.style.display = 'none';
             if(searchInputEl) searchInputEl.value = ''; 
         }
-
         if(!activeWords.length) { 
             area.innerHTML = `<div class="test-card"><p>Nincs aktív tanulnivaló.</p></div>`; 
-            area.className = '';
-            counter.textContent = "0 / 0"; 
-            return; 
+            area.className = ''; counter.textContent = "0 / 0"; return; 
         }
-
         if(isLearnGridView) {
             area.className = 'grid-mode';
-            
-            const filteredWords = activeWords.filter(w => 
-                w.word.toLowerCase().includes(searchInput) || 
-                w.meaning.toLowerCase().includes(searchInput)
-            );
-
+            const filteredWords = activeWords.filter(w => w.word.toLowerCase().includes(searchInput) || w.meaning.toLowerCase().includes(searchInput));
             counter.textContent = `Összes: ${filteredWords.length} / ${activeWords.length}`;
-            
-            if (filteredWords.length === 0) {
-                area.innerHTML = `<div class="test-card" style="grid-column: 1 / -1;"><p>Nincs találat erre: "${searchInput}"</p></div>`;
-            } else {
-                area.innerHTML = filteredWords.map(w => generateCardHTML(w, true)).join('');
-            }
+            if (filteredWords.length === 0) area.innerHTML = `<div class="test-card" style="grid-column: 1 / -1;"><p>Nincs találat erre: "${searchInput}"</p></div>`;
+            else area.innerHTML = filteredWords.map(w => generateCardHTML(w, true)).join('');
         } else {
             area.className = 'single-mode';
             if(currentIndex >= activeWords.length) currentIndex = 0;
@@ -738,9 +704,7 @@
                 <button onclick="prevCard(event)" title="Előző">←</button>
                 <button onclick="flipThisCard(event, this)" title="Fordít">↻</button>
                 <button onclick="nextCard(event)" title="Következő">→</button>
-            </div>
-        `;
-        
+            </div>`;
         return `
             <div class="card-container" onclick="flipThisCard(event, this)">
                 <div class="card">
@@ -751,9 +715,7 @@
                         ${controlsHTML}
                     </div>
                     <div class="card-face card-back">
-                        <div class="archive-pos-btn">
-                            <button class="btn-archive" onclick="window.markAsLearnedDirect('${w.id}', event)">📦 ${isCompact ? '' : 'Archivál'}</button>
-                        </div>
+                        <div class="archive-pos-btn"><button class="btn-archive" onclick="window.markAsLearnedDirect('${w.id}', event)">📦 ${isCompact ? '' : 'Archivál'}</button></div>
                         <button class="edit-icon-btn" onclick="openEditModal('${w.id}', event)">✎</button>
                         <h3>${w.meaning}</h3>
                         ${w.sentence ? `<p>„${w.sentence}”</p>` : ''}
@@ -763,10 +725,6 @@
             </div>`;
     }
 
-    // --- ARCHÍVUM ---
-    window.nextArchive = (e) => { if(e) e.stopPropagation(); if(archivedWords.length) { archiveIndex = (archiveIndex + 1) % archivedWords.length; window.renderArchive(); }};
-    window.prevArchive = (e) => { if(e) e.stopPropagation(); if(archivedWords.length) { archiveIndex = (archiveIndex - 1 + archivedWords.length) % archivedWords.length; window.renderArchive(); }};
-
     window.renderArchive = () => {
         const langEl = document.getElementById('archive-lang-select');
         if(!langEl) return;
@@ -774,14 +732,8 @@
         archivedWords = allWords.filter(w => w.lang === lang && w.learned === true);
         const area = document.getElementById('archive-area');
         document.getElementById('archive-counter').textContent = `Archivált: ${archivedWords.length}`;
-        
-        if(!archivedWords.length) { 
-            area.innerHTML = `<div class="test-card"><p>Üres.</p></div>`; 
-            area.className = '';
-            return; 
-        }
+        if(!archivedWords.length) { area.innerHTML = `<div class="test-card"><p>Üres.</p></div>`; area.className = ''; return; }
         if(archiveIndex >= archivedWords.length) archiveIndex = 0;
-        
         area.className = 'single-mode';
         const w = archivedWords[archiveIndex];
         area.innerHTML = `
@@ -790,7 +742,6 @@
                     <div class="card-face card-front" style="border:2px solid var(--success)">
                         <span style="position:absolute; top:20px; left:20px; color:var(--success); font-weight:bold;">Archivált</span>
                         <h2>${w.word}</h2>
-                        
                         <div class="card-actions-inline" onclick="event.stopPropagation()">
                             <button onclick="prevArchive(event)">←</button>
                             <button onclick="flipThisCard(event, this)">↻</button>
@@ -800,7 +751,6 @@
                     <div class="card-face card-back" style="border:2px solid var(--success)">
                         <h3>${w.meaning}</h3>
                         <button class="btn-secondary" style="margin-top:10px; width:auto; padding: 6px 16px; border-radius: 20px;" onclick="restoreFromArchive('${w.id}', event)">Visszaállít ↺</button>
-                        
                         <div class="card-actions-inline" onclick="event.stopPropagation()">
                             <button onclick="prevArchive(event)">←</button>
                             <button onclick="flipThisCard(event, this)">↻</button>
@@ -811,25 +761,17 @@
             </div>`;
     };
 
-    // --- TABOK KEZELÉSE ---
     window.switchTab = (tab) => {
         document.querySelectorAll('.view-section').forEach(e => e.classList.remove('active'));
         document.querySelectorAll('nav button').forEach(e => e.classList.remove('active'));
         document.getElementById(`view-${tab}`).classList.add('active');
         document.getElementById(`tab-${tab}`).classList.add('active');
-        
         if(tab === 'test') window.initTest(); 
         if(tab === 'learn') window.filterAndRenderCards(); 
         if(tab === 'archive') window.renderArchive();
-        if(tab === 'add') {
-            setTimeout(() => {
-                const inputElement = document.getElementById('inp-word');
-                if(inputElement) inputElement.focus();
-            }, 50);
-        }
+        if(tab === 'add') setTimeout(() => { const el = document.getElementById('inp-word'); if(el) el.focus(); }, 50);
     };
 
-    // --- MODALS ---
     window.openEditModal = (id, e) => {
         if(e) e.stopPropagation();
         const w = allWords.find(i => i.id === id);
@@ -840,116 +782,91 @@
         document.getElementById('edit-modal').classList.add('open');
     };
     window.closeEditModal = () => document.getElementById('edit-modal').classList.remove('open');
-
     window.openSettingsModal = () => document.getElementById('settings-modal').classList.add('open');
     window.closeSettingsModal = () => document.getElementById('settings-modal').classList.remove('open');
 
-    // --- BEÁLLÍTÁSOK LOGIKÁJA ---
     let isLearnGridView = localStorage.getItem('learn_grid_view') !== 'false';
+    window.isDeeplPopup = localStorage.getItem('deepl_popup') !== 'false';
+
     window.toggleLearnViewMode = () => {
         isLearnGridView = !isLearnGridView;
         localStorage.setItem('learn_grid_view', isLearnGridView);
-        window.updateViewBtnText();
-        window.filterAndRenderCards();
+        window.updateViewBtnText(); window.filterAndRenderCards();
     };
-
     window.toggleDeeplPopup = () => {
         window.isDeeplPopup = !window.isDeeplPopup;
         localStorage.setItem('deepl_popup', window.isDeeplPopup);
         window.updateDeeplBtnText();
     };
-
     window.updateViewBtnText = () => {
         const btn = document.getElementById('modal-view-btn');
         if(btn) btn.textContent = isLearnGridView ? '🔳 Egyes nézet (Fókuszált)' : '🔲 Rács nézet (Összes)';
     };
-
     window.updateDeeplBtnText = () => {
         const btn = document.getElementById('modal-deepl-btn');
         if(btn) btn.textContent = window.isDeeplPopup ? '🌐 DeepL: Felugró ablak' : '🌐 DeepL: Új lap (Tab)';
     };
-
     window.openDeepl = () => {
         const w = document.getElementById('inp-word').value.trim();
         if(w) {
             const url = 'https://www.deepl.com/translator?share=generic#en/hu/' + encodeURIComponent(w);
             if (window.isDeeplPopup) {
                 const popup = window.open(url, 'DeepLPopup', 'width=800,height=700,left=200,top=100,resizable=yes,scrollbars=yes');
-                if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-                    window.open(url, '_blank');
-                }
-            } else {
-                window.open(url, '_blank');
-            }
-        } else {
-            alert('Kérlek, írj be egy szót előbb!');
-        }
+                if (!popup || popup.closed || typeof popup.closed === 'undefined') window.open(url, '_blank');
+            } else window.open(url, '_blank');
+        } else alert('Kérlek, írj be egy szót előbb!');
     };
 
     window.toggleTheme = () => {
-        const body = document.body;
-        body.classList.toggle('dark-mode');
+        const body = document.body; body.classList.toggle('dark-mode');
         const isDark = body.classList.contains('dark-mode');
         localStorage.setItem('theme', isDark ? 'dark' : 'light');
-        const themeBtn = document.getElementById('modal-theme-btn');
-        if (themeBtn) themeBtn.textContent = isDark ? '☀️ Világos mód' : '🌙 Sötét mód';
+        const btn = document.getElementById('modal-theme-btn');
+        if (btn) btn.textContent = isDark ? '☀️ Világos mód' : '🌙 Sötét mód';
     };
 
-    const themeBtnModal = document.getElementById('modal-theme-btn');
     if (localStorage.getItem('theme') === 'light') {
         document.body.classList.remove('dark-mode');
-        if (themeBtnModal) themeBtnModal.textContent = '🌙 Sötét mód';
+        if (document.getElementById('modal-theme-btn')) document.getElementById('modal-theme-btn').textContent = '🌙 Sötét mód';
     } else {
         document.body.classList.add('dark-mode');
-        if (themeBtnModal) themeBtnModal.textContent = '☀️ Világos mód';
         localStorage.setItem('theme', 'dark');
     }
-    window.updateViewBtnText();
-    window.updateDeeplBtnText();
+    window.updateViewBtnText(); window.updateDeeplBtnText();
 
-    // --- TEST MODE ---
     window.initTest = () => {
         const langEl = document.getElementById('test-lang-select');
         if(!langEl) return;
         const lang = langEl.value;
         testList = allWords.filter(w => w.lang === lang && w.learned !== true).sort(() => Math.random() - 0.5);
-        testIndex = 0;
-        revealedHints = [];
-        hintCountForCurrentWord = 0;
+        testIndex = 0; revealedHints = []; hintCountForCurrentWord = 0;
         window.renderTest();
     };
 
     window.renderTest = () => {
         const div = document.getElementById('test-content');
-        if(!testList || testList.length === 0) {
-            div.innerHTML = "<p>Nincs tesztelhető szó a választott nyelven.</p>";
-            return;
-        }
-        if(testIndex >= testList.length) {
-            div.innerHTML = `<h3>Vége! 🎉</h3><p>Pontszám: ${userPoints}</p><button class="btn-primary" onclick="window.initTest()">Újra</button>`;
-            return;
-        }
-
+        if(!testList || testList.length === 0) { div.innerHTML = "<p>Nincs tesztelhető szó a választott nyelven.</p>"; return; }
+        if(testIndex >= testList.length) { div.innerHTML = `<h3>Vége! 🎉</h3><p>Pontszám: ${userPoints}</p><button class="btn-primary" onclick="window.initTest()">Újra</button>`; return; }
         const item = testList[testIndex];
         if(!item) { testIndex = 0; window.initTest(); return; }
+        revealedHints = []; hintCountForCurrentWord = 0;
+        window.currentTestErrorCount = 0; // Hiba számláló nullázása
 
-        revealedHints = [];
-        hintCountForCurrentWord = 0;
-        window.currentTestPerfect = true; // Alapból tökéletesnek indul a gépelés
+        const promptLabel = window.testModeReverse ? "Idegen szó?" : "Jelentés?";
+        const displayWord = window.testModeReverse ? item.meaning : item.word;
 
         div.innerHTML = `
-            <p style="color:var(--text-sub)">Jelentés?</p>
-            <h2 style="font-size:2rem; margin-bottom:15px;">${item.word}</h2>
+            <p style="color:var(--text-sub)">${promptLabel}</p>
+            <h2 style="font-size:2rem; margin-bottom:15px;">${displayWord}</h2>
             <div class="test-controls">
                 <button class="btn-secondary" style="font-size:0.8rem; width:auto;" onclick="window.triggerHint()" id="btn-hint">💡 Súgás</button>
                 <button class="btn-danger" style="font-size:0.8rem; width:auto;" onclick="window.giveUp()" id="btn-giveup">Megoldás</button>
             </div>
             <div id="dynamic-display" class="dynamic-display"></div>
-            <input type="text" id="test-input" placeholder="Írd be a jelentést..." autocomplete="off">
+            <input type="text" id="test-input" placeholder="Írd be a választ..." autocomplete="off">
             <div id="res-box" style="display:none; padding:15px; margin-top:10px; font-weight:bold; background:var(--bg-input); border-radius:12px;"></div>
             <button class="btn-primary" onclick="window.checkAnswer()" id="btn-check" style="margin-top:15px;">Ellenőrzés</button>
-            <button class="btn-secondary hidden" onclick="window.nextTestItem()" id="btn-next" style="width:100%; margin-top:10px;">Tovább</button>
-        `;
+            <button class="btn-secondary hidden" onclick="window.nextTestItem()" id="btn-next" style="width:100%; margin-top:10px;">Tovább</button>`;
 
         const input = document.getElementById('test-input');
         if(input) {
@@ -961,14 +878,11 @@
     };
 
     window.triggerHint = () => {
-        if (hintCountForCurrentWord >= 3) {
-            if(!confirm("A 4. hint nullázza a streak-et. Biztosan?")) return;
-            userStreak = 0; saveStats();
-        }
+        if (hintCountForCurrentWord >= 3) { if(!confirm("A 4. hint nullázza a streak-et. Biztosan?")) return; userStreak = 0; saveStats(); }
         hintCountForCurrentWord++;
-        window.currentTestPerfect = false; // Ha súgást kér, már nem tökéletes
+        window.currentTestErrorCount = 99; // Hint kérés esetén nem számít tökéletesnek
 
-        const t = testList[testIndex].meaning;
+        const t = window.testModeReverse ? testList[testIndex].word : testList[testIndex].meaning;
         if(revealedHints.length === 0) {
             revealedHints.push(0, t.length-1);
             for(let i=0; i<t.length; i++) if(t[i] === ' ' || t[i] === ',') revealedHints.push(i);
@@ -983,9 +897,8 @@
 
     window.giveUp = () => {
         userStreak = 0; saveStats();
-        window.currentTestPerfect = false; // A feladás biztosan nem tökéletes
-        
-        const fullMeaning = testList[testIndex].meaning;
+        window.currentTestErrorCount = 99;
+        const fullTarget = window.testModeReverse ? testList[testIndex].word : testList[testIndex].meaning;
         const res = document.getElementById('res-box');
         document.getElementById('test-input').disabled = true;
         document.getElementById('btn-check').style.display = 'none';
@@ -993,11 +906,9 @@
         document.getElementById('btn-giveup').style.display = 'none';
         document.getElementById('btn-next').classList.remove('hidden');
         document.getElementById('btn-next').focus();
-        
-        res.style.display = 'block';
-        res.style.color = 'var(--error)';
-        res.innerHTML = `A helyes válasz: <br><span style="font-size:1.2rem; color:var(--text-main);">${fullMeaning}</span>`;
-        for(let i=0; i<fullMeaning.length; i++) if(!revealedHints.includes(i)) revealedHints.push(i);
+        res.style.display = 'block'; res.style.color = 'var(--error)';
+        res.innerHTML = `A helyes válasz: <br><span style="font-size:1.2rem; color:var(--text-main);">${fullTarget}</span>`;
+        for(let i=0; i<fullTarget.length; i++) if(!revealedHints.includes(i)) revealedHints.push(i);
         window.updateVisuals();
     };
 
@@ -1005,37 +916,30 @@
         const inputEl = document.getElementById('test-input');
         if(!inputEl) return;
         const inputVal = inputEl.value;
-        const fullMeaning = testList[testIndex].meaning;
-        
+        const fullTarget = window.testModeReverse ? testList[testIndex].word : testList[testIndex].meaning;
         const userParts = inputVal.split(',').map(p => p.trim());
-        const targetParts = fullMeaning.split(',');
-        
+        const targetParts = fullTarget.split(',');
         const targetMap = new Array(targetParts.length).fill(null);
 
         userParts.forEach(uPart => {
             if(!uPart) return;
-            let bestMatchIdx = -1;
-            let maxMatchLen = -1;
-            
+            let bestMatchIdx = -1, maxMatchLen = -1;
             for (let i = 0; i < targetParts.length; i++) {
                 if (targetMap[i] !== null) continue;
                 const tLower = targetParts[i].trim().toLowerCase();
                 const uLower = uPart.toLowerCase();
                 let matchLen = 0;
-                while(matchLen < uLower.length && matchLen < tLower.length && uLower[matchLen] === tLower[matchLen]) { matchLen++; }
+                while(matchLen < uLower.length && matchLen < tLower.length && uLower[matchLen] === tLower[matchLen]) matchLen++;
                 if (matchLen > maxMatchLen) { maxMatchLen = matchLen; bestMatchIdx = i; }
             }
-            if (bestMatchIdx !== -1) { targetMap[bestMatchIdx] = uPart; }
+            if (bestMatchIdx !== -1) targetMap[bestMatchIdx] = uPart;
         });
 
-        let html = '';
-        let currentTargetIdx = 0;
-        let charInUserText = 0;
-        let wordCharIndex = 1;
+        let html = '', currentTargetIdx = 0, charInUserText = 0, wordCharIndex = 1;
+        let errorsFound = 0;
 
-        for(let i = 0; i < fullMeaning.length; i++) {
-            const char = fullMeaning[i];
-
+        for(let i = 0; i < fullTarget.length; i++) {
+            const char = fullTarget[i];
             if(char === ',') { 
                 html += `<div style="display:inline-flex; flex-direction:column; align-items:center; margin:0 2px;"><span style="height:30px; display:flex; align-items:center;">,</span><span style="font-size:0.65rem; opacity:0; margin-top:8px;">0</span></div>`; 
                 currentTargetIdx++; charInUserText = 0; wordCharIndex = 1; continue; 
@@ -1051,20 +955,13 @@
 
             const uText = targetMap[currentTargetIdx];
             let displayHTML = `<span class="char-placeholder" style="color: var(--text-sub); font-weight: 800;">_</span>`;
-            
-            if(revealedHints.includes(i)) {
-                displayHTML = `<span class="char-hint">${char === ' ' ? '&nbsp;' : char}</span>`;
-            }
+            if(revealedHints.includes(i)) displayHTML = `<span class="char-hint">${char === ' ' ? '&nbsp;' : char}</span>`;
 
             if(uText && charInUserText < uText.length) {
                 const uChar = uText[charInUserText];
                 const isMatch = uChar.toLowerCase() === char.toLowerCase();
-                const displayChar = uChar === ' ' ? '&nbsp;' : uChar;
-                
-                // HA BÁRMIKOR ELRONT EGY BETŰT, ELVESZTI A TÖKÉLETESSÉGET!
-                if (!isMatch) window.currentTestPerfect = false;
-
-                displayHTML = `<span class="${isMatch ? 'char-correct' : 'char-wrong'}">${displayChar}</span>`;
+                if (!isMatch) errorsFound++;
+                displayHTML = `<span class="${isMatch ? 'char-correct' : 'char-wrong'}">${uChar === ' ' ? '&nbsp;' : uChar}</span>`;
                 charInUserText++;
             }
 
@@ -1075,14 +972,15 @@
             </div>`;
             wordCharIndex++;
         }
+        window.currentTestErrorCount = errorsFound;
         document.getElementById('dynamic-display').innerHTML = html;
     };
 
     window.checkAnswer = () => {
         const inputVal = document.getElementById('test-input').value.trim().toLowerCase();
-        const fullMeaning = testList[testIndex].meaning;
+        const fullTarget = window.testModeReverse ? testList[testIndex].word : testList[testIndex].meaning;
         const userParts = inputVal.split(',').map(s => s.trim()).filter(s => s.length > 0);
-        const targetParts = fullMeaning.split(',').map(s => s.trim().toLowerCase());
+        const targetParts = fullTarget.split(',').map(s => s.trim().toLowerCase());
 
         let correctCount = 0;
         userParts.forEach(u => {
@@ -1098,27 +996,26 @@
         document.getElementById('btn-giveup').style.display='none';
         document.getElementById('btn-next').classList.remove('hidden');
         document.getElementById('btn-next').focus();
-
         res.style.display='block';
         
         let currentWord = testList[testIndex];
         
         if(isSuccess) {
-            userPoints += 50;
-            userStreak += 1;
+            userPoints += 50; userStreak += 1;
             if(userStreak > userMaxStreak) userMaxStreak = userStreak;
             saveStats();
 
+            let isWithinTolerance = window.currentTestErrorCount <= 1; // 1 hiba még belefér
             let justArchived = false;
-            let currentPerfectStreak = (currentWord.perfectStreak || 0) + 1;
+            let currentPerfectStreak = (currentWord.perfectStreak || 0);
 
-            if (window.autoArchiveEnabled && window.currentTestPerfect) {
+            if (window.autoArchiveEnabled && isWithinTolerance) {
+                currentPerfectStreak += 1;
                 if (currentPerfectStreak >= window.autoArchiveThreshold) {
                     justArchived = true;
                     const wIdx = allWords.findIndex(w => w.id === currentWord.id);
                     if (wIdx > -1) {
-                        allWords[wIdx].learned = true;
-                        allWords[wIdx].archivedAt = Date.now();
+                        allWords[wIdx].learned = true; allWords[wIdx].archivedAt = Date.now();
                         allWords[wIdx].perfectStreak = currentPerfectStreak;
                     }
                     updateDoc(doc(db, "words", currentWord.id), { learned: true, archivedAt: Date.now(), perfectStreak: currentPerfectStreak });
@@ -1127,8 +1024,8 @@
                     if (wIdx > -1) allWords[wIdx].perfectStreak = currentPerfectStreak;
                     updateDoc(doc(db, "words", currentWord.id), { perfectStreak: currentPerfectStreak });
                 }
-            } else if (!window.currentTestPerfect) {
-                // Sikerült, de nem volt hibátlan, így a széria lenullázódik
+            } else {
+                // Túl sok hiba (több mint 1) vagy kikapcsolt funkció
                 currentPerfectStreak = 0;
                 const wIdx = allWords.findIndex(w => w.id === currentWord.id);
                 if (wIdx > -1) allWords[wIdx].perfectStreak = 0;
@@ -1137,28 +1034,26 @@
 
             if (justArchived) {
                 res.style.color='var(--success)'; 
-                res.innerHTML=`Helyes! ✅ +50 Pont<br><br><span style="font-size:1rem; color:var(--primary);">🎉 Gratulálok! ${window.autoArchiveThreshold}x hibátlanul beírtad, így a szó automatikusan archiválásra került!</span>`;
+                res.innerHTML=`Helyes! ✅ +50 Pont<br><br><span style="font-size:1rem; color:var(--primary);">🎉 Gratulálok! ${window.autoArchiveThreshold}x hibátlanul (max 1 typo) beírtad, így archiváltuk!</span>`;
             } else {
                 res.style.color='var(--success)'; 
                 let txt = `Helyes! ✅ +50 Pont`;
                 if (window.autoArchiveEnabled) {
-                    if (window.currentTestPerfect) {
-                        txt += `<br><span style="font-size:0.85rem; color:var(--text-sub); display:block; margin-top:5px;">${currentPerfectStreak} / ${window.autoArchiveThreshold} hibátlan beírás az archiváláshoz.</span>`;
+                    if (isWithinTolerance) {
+                        const typoNotice = window.currentTestErrorCount === 1 ? "<br>(Egy betűhibát elnéztünk)" : "";
+                        txt += `<br><span style="font-size:0.85rem; color:var(--text-sub); display:block; margin-top:5px;">${currentPerfectStreak} / ${window.autoArchiveThreshold} széria.${typoNotice}</span>`;
                     } else {
-                        txt += `<br><span style="font-size:0.85rem; color:var(--error); display:block; margin-top:5px;">Helyes, de gépelési hibát vétettél, így a széria nullázódott! (0/${window.autoArchiveThreshold})</span>`;
+                        txt += `<br><span style="font-size:0.85rem; color:var(--error); display:block; margin-top:5px;">Mivel több mint 1 betűt elrontottál a szóban, ez a kör nem számít bele a hibátlan szériába! (0/${window.autoArchiveThreshold})</span>`;
                     }
                 }
                 res.innerHTML = txt;
             }
-
         } else {
-            // Teljes hiba esetén is nullázódik a széria
             const wIdx = allWords.findIndex(w => w.id === currentWord.id);
             if (wIdx > -1) allWords[wIdx].perfectStreak = 0;
             updateDoc(doc(db, "words", currentWord.id), { perfectStreak: 0 });
-
             res.style.color='var(--error)'; 
-            res.innerHTML=`Sajnos nem. ❌<br>Helyes válasz: ${fullMeaning}`;
+            res.innerHTML=`Sajnos nem. ❌<br>Helyes válasz: ${fullTarget}`;
             userStreak = 0; saveStats();
         }
     };
