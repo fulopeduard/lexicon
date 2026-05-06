@@ -228,9 +228,13 @@
     </section>
 
     <section id="view-test" class="view-section">
-        <div style="display: flex; gap: 10px; max-width: 500px; margin: 0 auto 20px auto;">
-            <select id="test-lang-select" onchange="window.initTest()" style="margin-bottom: 0; flex: 1;"></select>
-            <button class="btn-secondary" id="btn-toggle-direction" onclick="window.toggleTestDirection()" style="width: auto; padding: 0 15px; font-size: 1.4rem;" title="Irány megfordítása">🔄</button>
+        <div style="display: flex; gap: 10px; max-width: 500px; margin: 0 auto 20px auto; flex-wrap: wrap;">
+            <select id="test-type-select" onchange="window.initTest()" style="margin-bottom: 0; flex: 1; min-width: 120px;">
+                <option value="active">Aktív szavak</option>
+                <option value="archive">Archiváltak</option>
+            </select>
+            <select id="test-lang-select" onchange="window.initTest()" style="margin-bottom: 0; flex: 1; min-width: 120px;"></select>
+            <button class="btn-secondary" id="btn-toggle-direction" onclick="window.toggleTestDirection()" style="width: auto; padding: 0 15px; font-size: 1.4rem; margin-bottom: 0;" title="Irány megfordítása">🔄</button>
         </div>
         <div class="test-card">
             <div id="test-content"></div>
@@ -239,7 +243,10 @@
 
     <section id="view-archive" class="view-section">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; max-width: 500px; margin-left: auto; margin-right: auto;">
-            <select id="archive-lang-select" onchange="renderArchive()" style="width: auto; margin:0; padding: 8px 16px;"></select>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <select id="archive-lang-select" onchange="renderArchive()" style="width: auto; margin:0; padding: 8px 16px;"></select>
+                <button class="btn-primary" onclick="window.startArchiveTest()" style="width: auto; padding: 8px 16px; font-size: 0.9rem;">Teszt</button>
+            </div>
             <span id="archive-counter" style="color: var(--text-sub); font-weight: 600;">0</span>
         </div>
         <div id="archive-area"></div>
@@ -306,7 +313,7 @@
             <hr style="border: 0; border-top: 1px solid var(--border); margin: 5px 0;">
 
             <div style="background: var(--bg-input); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
-                <h4 style="margin-bottom: 10px; color: var(--primary); font-size: 1rem;">🎯 Automatikus Archiválás</h4>
+                <h4 style="margin-bottom: 10px; color: var(--primary); font-size: 1rem;">🎯 Automatikus Archiválás / Hosszabbítás</h4>
                 <label style="display: flex; align-items: center; gap: 10px; font-size: 0.9rem; margin-bottom: 10px; font-weight: bold; cursor: pointer;">
                     <input type="checkbox" id="set-auto-archive" onchange="window.saveDetailedSettings()" style="width: auto; margin: 0; transform: scale(1.2);"> Funkció bekapcsolva
                 </label>
@@ -624,9 +631,9 @@
         if(!confirm("Archiválod ezt a szót?")) return;
         const w = allWords.find(x => x.id === id);
         if(!w) return;
-        w.learned = true; w.archivedAt = Date.now();
+        w.learned = true; w.archivedAt = Date.now(); w.perfectStreak = 0;
         window.filterAndRenderCards();
-        try { await updateDoc(doc(db, "words", id), { learned: true, archivedAt: Date.now() }); } catch(err){console.error(err);}
+        try { await updateDoc(doc(db, "words", id), { learned: true, archivedAt: Date.now(), perfectStreak: 0 }); } catch(err){console.error(err);}
     };
 
     window.restoreFromArchive = async (id, e) => {
@@ -732,6 +739,19 @@
             </div>`;
     }
 
+    // --- ÚJ FUNKCIÓ: Archívum Teszt Indítása ---
+    window.startArchiveTest = () => {
+        const lang = document.getElementById('archive-lang-select').value;
+        const testLangEl = document.getElementById('test-lang-select');
+        if (testLangEl && Array.from(testLangEl.options).some(o => o.value === lang)) {
+            testLangEl.value = lang;
+        }
+        const typeEl = document.getElementById('test-type-select');
+        if(typeEl) typeEl.value = 'archive';
+        
+        window.switchTab('test'); // Ez automatikusan meghívja az initTest-et!
+    };
+
     window.renderArchive = () => {
         const langEl = document.getElementById('archive-lang-select');
         if(!langEl) return;
@@ -741,7 +761,7 @@
         document.getElementById('archive-counter').textContent = `Archivált: ${archivedWords.length}`;
         
         if(!archivedWords.length) { 
-            area.innerHTML = `<div class="test-card"><p>Üres.</p></div>`; 
+            area.innerHTML = `<div class="test-card"><p>Nincs archivált szó.</p></div>`; 
             area.className = ''; 
             return; 
         }
@@ -755,7 +775,7 @@
                 const msInDay = 1000 * 60 * 60 * 24;
                 const daysLeft = Math.ceil((w.archivedAt + window.autoRestoreDays * msInDay - Date.now()) / msInDay);
                 const displayDays = daysLeft > 0 ? daysLeft : 0;
-                restoreInfo = `<div style="margin-top: 10px; font-size: 0.85rem; color: var(--text-sub);">⏳ Újraaktíválódik: <strong style="color:var(--primary)">${displayDays} nap</strong> múlva</div>`;
+                restoreInfo = `<div style="margin-top: 10px; font-size: 0.85rem; color: var(--text-sub);">⏳ Újraaktíválódik:<br><strong style="color:var(--primary)">${displayDays} nap</strong> múlva</div>`;
             }
 
             html += `
@@ -852,16 +872,28 @@
 
     window.initTest = () => {
         const langEl = document.getElementById('test-lang-select');
-        if(!langEl) return;
+        const typeEl = document.getElementById('test-type-select');
+        if(!langEl || !typeEl) return;
+        
         const lang = langEl.value;
-        testList = allWords.filter(w => w.lang === lang && w.learned !== true).sort(() => Math.random() - 0.5);
+        const isArchiveTest = typeEl.value === 'archive';
+        
+        testList = allWords.filter(w => w.lang === lang && (isArchiveTest ? w.learned === true : w.learned !== true)).sort(() => Math.random() - 0.5);
+        
         testIndex = 0; revealedHints = []; hintCountForCurrentWord = 0;
         window.renderTest();
     };
 
     window.renderTest = () => {
         const div = document.getElementById('test-content');
-        if(!testList || testList.length === 0) { div.innerHTML = "<p>Nincs tesztelhető szó a választott nyelven.</p>"; return; }
+        const typeEl = document.getElementById('test-type-select');
+        const isArchiveTest = typeEl && typeEl.value === 'archive';
+
+        if(!testList || testList.length === 0) { 
+            const msg = isArchiveTest ? "Nincs tesztelhető archivált szó a választott nyelven." : "Nincs tesztelhető aktív szó a választott nyelven.";
+            div.innerHTML = `<p>${msg}</p>`; 
+            return; 
+        }
         if(testIndex >= testList.length) { div.innerHTML = `<h3>Vége! 🎉</h3><p>Pontszám: ${userPoints}</p><button class="btn-primary" onclick="window.initTest()">Újra</button>`; return; }
         const item = testList[testIndex];
         if(!item) { testIndex = 0; window.initTest(); return; }
@@ -1032,18 +1064,23 @@
 
             let isWithinTolerance = window.currentTestErrorCount <= 1; 
             let justArchived = false;
+            let justExtended = false;
             let currentPerfectStreak = (currentWord.perfectStreak || 0);
+            let wasAlreadyLearned = currentWord.learned === true;
 
             if (window.autoArchiveEnabled && isWithinTolerance) {
                 currentPerfectStreak += 1;
                 if (currentPerfectStreak >= window.autoArchiveThreshold) {
-                    justArchived = true;
+                    if (wasAlreadyLearned) justExtended = true;
+                    else justArchived = true;
+                    
                     const wIdx = allWords.findIndex(w => w.id === currentWord.id);
                     if (wIdx > -1) {
-                        allWords[wIdx].learned = true; allWords[wIdx].archivedAt = Date.now();
-                        allWords[wIdx].perfectStreak = currentPerfectStreak;
+                        allWords[wIdx].learned = true; 
+                        allWords[wIdx].archivedAt = Date.now();
+                        allWords[wIdx].perfectStreak = 0; // Nullázás a következő ciklushoz
                     }
-                    updateDoc(doc(db, "words", currentWord.id), { learned: true, archivedAt: Date.now(), perfectStreak: currentPerfectStreak });
+                    updateDoc(doc(db, "words", currentWord.id), { learned: true, archivedAt: Date.now(), perfectStreak: 0 });
                 } else {
                     const wIdx = allWords.findIndex(w => w.id === currentWord.id);
                     if (wIdx > -1) allWords[wIdx].perfectStreak = currentPerfectStreak;
@@ -1059,6 +1096,10 @@
             if (justArchived) {
                 res.style.color='var(--success)'; 
                 res.innerHTML=`Helyes! ✅ +50 Pont<br><br><span style="font-size:1rem; color:var(--primary);">🎉 Gratulálok! ${window.autoArchiveThreshold}x hibátlanul (max 1 typo) beírtad, így archiváltuk!</span>`;
+            } else if (justExtended) {
+                res.style.color='var(--success)'; 
+                const extendText = window.autoRestoreEnabled ? `az archívumban meghosszabbítva ${window.autoRestoreDays} nappal!` : "megerősítve az archívumban!";
+                res.innerHTML=`Helyes! ✅ +50 Pont<br><br><span style="font-size:1rem; color:var(--primary);">🎉 Gratulálok! ${window.autoArchiveThreshold}x hibátlanul (max 1 typo) beírtad, így a szó ideje ${extendText}</span>`;
             } else {
                 res.style.color='var(--success)'; 
                 let txt = `Helyes! ✅ +50 Pont`;
