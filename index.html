@@ -284,6 +284,29 @@
     </section>
 </div>
 
+<div class="modal-overlay" id="archive-modal">
+    <div class="modal-content">
+        <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+            <h3>Archiválás</h3>
+            <button onclick="window.closeArchiveModal()" style="border:none; background:none; font-size:1.5rem; cursor:pointer; color:var(--text-main);">×</button>
+        </div>
+        <p style="margin-bottom: 15px; color: var(--text-sub); font-size: 0.95rem;">Hogyan szeretnéd archiválni ezt a szót?</p>
+        <input type="hidden" id="archive-word-id">
+        
+        <button class="btn-primary" onclick="window.confirmArchive(true)" style="margin-bottom: 15px; background: var(--success); display:flex; align-items:center; justify-content:center; gap:8px;">
+            <span>📌 Végleges archiválás</span>
+        </button>
+        
+        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px; background: var(--bg-input); padding: 10px; border-radius: 12px;">
+            <span style="font-size: 0.9rem; font-weight: bold;">⏳ Újraaktíválódik:</span>
+            <input type="number" id="archive-days-input" min="1" max="365" style="width: 70px; margin: 0; padding: 6px; text-align: center;">
+            <span style="color: var(--text-sub); font-size: 0.9rem;">nap múlva</span>
+        </div>
+        
+        <button class="btn-secondary" onclick="window.confirmArchive(false)">Ideiglenes archiválás</button>
+    </div>
+</div>
+
 <div class="modal-overlay" id="edit-modal">
     <div class="modal-content">
         <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
@@ -327,12 +350,12 @@
             </div>
             
             <div style="background: var(--bg-input); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
-                <h4 style="margin-bottom: 10px; color: var(--primary); font-size: 1rem;">⏳ Automatikus Visszaállítás</h4>
+                <h4 style="margin-bottom: 10px; color: var(--primary); font-size: 1rem;">⏳ Automatikus Visszaállítás alapérték</h4>
                 <label style="display: flex; align-items: center; gap: 10px; font-size: 0.9rem; margin-bottom: 15px; font-weight: bold; cursor: pointer;">
                     <input type="checkbox" id="set-auto-restore" onchange="window.saveDetailedSettings()" style="width: auto; margin: 0; transform: scale(1.2);"> Funkció bekapcsolva
                 </label>
                 <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
-                    <span>Ennyi nap múlva kerüljön vissza:</span>
+                    <span>Alapértelmezett napok száma:</span>
                     <input type="number" id="set-restore-days" min="1" max="365" value="30" onchange="window.saveDetailedSettings()" style="width: 60px; padding: 6px; margin: 0; text-align: center;">
                 </div>
             </div>
@@ -495,10 +518,11 @@
             const now = Date.now();
             if (window.autoRestoreEnabled) {
                 allWords.forEach(w => {
-                    if (w.learned && w.archivedAt) {
+                    if (w.learned && w.archivedAt && !w.permanent) {
                         const msInDay = 1000 * 60 * 60 * 24;
                         const daysPassed = Math.floor((now - w.archivedAt) / msInDay);
-                        if (daysPassed >= window.autoRestoreDays) {
+                        const targetDays = w.archiveDays || window.autoRestoreDays;
+                        if (daysPassed >= targetDays) {
                             w.learned = false;
                             w.perfectStreak = 0;
                             updateDoc(doc(db, "words", w.id), { learned: false, perfectStreak: 0 });
@@ -563,7 +587,7 @@
         const s = document.getElementById('inp-sentence').value.trim();
         if(!lang || !w || !m) return alert('Töltsd ki az adatokat!');
         try {
-            const newDoc = { uid: currentUser.uid, lang, word: w, meaning: m, sentence: s, learned: false, perfectStreak: 0, createdAt: Date.now() };
+            const newDoc = { uid: currentUser.uid, lang, word: w, meaning: m, sentence: s, learned: false, perfectStreak: 0, permanent: false, createdAt: Date.now() };
             const docRef = await addDoc(collection(db, "words"), newDoc);
             allWords.unshift({ id: docRef.id, ...newDoc });
             document.getElementById('inp-word').value = ''; 
@@ -588,7 +612,7 @@
             const parts = line.split('-');
             if(parts.length >= 2) {
                 const docRef = doc(collection(db, "words"));
-                const data = { uid: currentUser.uid, lang, word: parts[0].trim(), meaning: parts.slice(1).join('-').trim(), sentence: "", learned: false, perfectStreak: 0, createdAt: Date.now() };
+                const data = { uid: currentUser.uid, lang, word: parts[0].trim(), meaning: parts.slice(1).join('-').trim(), sentence: "", learned: false, perfectStreak: 0, permanent: false, createdAt: Date.now() };
                 batch.set(docRef, data);
                 allWords.unshift({ id: docRef.id, ...data });
                 count++;
@@ -626,14 +650,51 @@
         } catch(e) { alert("Hiba: " + e.message); }
     };
 
-    window.markAsLearnedDirect = async (id, e) => {
+    // --- ÚJ ARCHIVÁLÁSI LOGIKA MODÁLLAL ---
+    window.markAsLearnedDirect = (id, e) => {
         if(e) e.stopPropagation();
-        if(!confirm("Archiválod ezt a szót?")) return;
         const w = allWords.find(x => x.id === id);
         if(!w) return;
-        w.learned = true; w.archivedAt = Date.now(); w.perfectStreak = 0;
+        document.getElementById('archive-word-id').value = id;
+        document.getElementById('archive-days-input').value = window.autoRestoreDays || 30;
+        document.getElementById('archive-modal').classList.add('open');
+    };
+
+    window.closeArchiveModal = () => document.getElementById('archive-modal').classList.remove('open');
+
+    window.confirmArchive = async (isPermanent) => {
+        const id = document.getElementById('archive-word-id').value;
+        const days = parseInt(document.getElementById('archive-days-input').value) || window.autoRestoreDays;
+        const w = allWords.find(x => x.id === id);
+        if(!w) return;
+        
+        w.learned = true; 
+        w.archivedAt = Date.now(); 
+        w.perfectStreak = 0;
+        w.permanent = isPermanent;
+        if (!isPermanent) w.archiveDays = days;
+
+        window.closeArchiveModal();
         window.filterAndRenderCards();
-        try { await updateDoc(doc(db, "words", id), { learned: true, archivedAt: Date.now(), perfectStreak: 0 }); } catch(err){console.error(err);}
+        
+        try { 
+            await updateDoc(doc(db, "words", id), { 
+                learned: true, 
+                archivedAt: Date.now(), 
+                perfectStreak: 0,
+                permanent: isPermanent,
+                archiveDays: isPermanent ? null : days
+            }); 
+        } catch(err){console.error(err);}
+    };
+
+    window.makeArchivePermanent = async (id, e) => {
+        if(e) e.stopPropagation();
+        const w = allWords.find(x => x.id === id);
+        if(!w) return;
+        w.permanent = true;
+        window.renderArchive();
+        try { await updateDoc(doc(db, "words", id), { permanent: true }); } catch(err){console.error(err);}
     };
 
     window.restoreFromArchive = async (id, e) => {
@@ -739,7 +800,6 @@
             </div>`;
     }
 
-    // --- ÚJ FUNKCIÓ: Archívum Teszt Indítása ---
     window.startArchiveTest = () => {
         const lang = document.getElementById('archive-lang-select').value;
         const testLangEl = document.getElementById('test-lang-select');
@@ -749,7 +809,7 @@
         const typeEl = document.getElementById('test-type-select');
         if(typeEl) typeEl.value = 'archive';
         
-        window.switchTab('test'); // Ez automatikusan meghívja az initTest-et!
+        window.switchTab('test'); 
     };
 
     window.renderArchive = () => {
@@ -771,11 +831,18 @@
         
         archivedWords.forEach(w => {
             let restoreInfo = '';
-            if (window.autoRestoreEnabled && w.archivedAt) {
+            let permanentBtn = '';
+            
+            if (w.permanent) {
+                restoreInfo = `<div style="margin-top: 10px; font-size: 0.85rem; color: var(--success); font-weight: bold;">✅ Véglegesen archiválva</div>`;
+            } else if (window.autoRestoreEnabled && w.archivedAt) {
                 const msInDay = 1000 * 60 * 60 * 24;
-                const daysLeft = Math.ceil((w.archivedAt + window.autoRestoreDays * msInDay - Date.now()) / msInDay);
+                const targetDays = w.archiveDays || window.autoRestoreDays;
+                const daysLeft = Math.ceil((w.archivedAt + targetDays * msInDay - Date.now()) / msInDay);
                 const displayDays = daysLeft > 0 ? daysLeft : 0;
                 restoreInfo = `<div style="margin-top: 10px; font-size: 0.85rem; color: var(--text-sub);">⏳ Újraaktíválódik:<br><strong style="color:var(--primary)">${displayDays} nap</strong> múlva</div>`;
+                
+                permanentBtn = `<button class="btn-archive" style="margin-top:10px; width:auto; padding: 4px 12px; border-radius: 12px; font-size:0.8rem; background:transparent; border:1px solid var(--success); color:var(--success);" onclick="window.makeArchivePermanent('${w.id}', event)">Véglegesít 📌</button>`;
             }
 
             html += `
@@ -789,6 +856,7 @@
                         <div class="card-face card-back" style="border:2px solid var(--success)">
                             <h3>${w.meaning}</h3>
                             <button class="btn-secondary" style="margin-top:15px; width:auto; padding: 6px 16px; border-radius: 20px; font-size:0.9rem;" onclick="restoreFromArchive('${w.id}', event)">Visszaállít ↺</button>
+                            ${permanentBtn}
                         </div>
                     </div>
                 </div>`;
@@ -1067,20 +1135,26 @@
             let justExtended = false;
             let currentPerfectStreak = (currentWord.perfectStreak || 0);
             let wasAlreadyLearned = currentWord.learned === true;
+            let isPerm = currentWord.permanent === true;
 
             if (window.autoArchiveEnabled && isWithinTolerance) {
                 currentPerfectStreak += 1;
                 if (currentPerfectStreak >= window.autoArchiveThreshold) {
-                    if (wasAlreadyLearned) justExtended = true;
-                    else justArchived = true;
+                    if (wasAlreadyLearned && !isPerm) justExtended = true;
+                    else if (!wasAlreadyLearned) justArchived = true;
                     
                     const wIdx = allWords.findIndex(w => w.id === currentWord.id);
                     if (wIdx > -1) {
                         allWords[wIdx].learned = true; 
                         allWords[wIdx].archivedAt = Date.now();
-                        allWords[wIdx].perfectStreak = 0; // Nullázás a következő ciklushoz
+                        allWords[wIdx].perfectStreak = 0;
+                        if (!isPerm) allWords[wIdx].archiveDays = window.autoRestoreDays;
                     }
-                    updateDoc(doc(db, "words", currentWord.id), { learned: true, archivedAt: Date.now(), perfectStreak: 0 });
+                    
+                    const updateData = { learned: true, archivedAt: Date.now(), perfectStreak: 0 };
+                    if (!isPerm) updateData.archiveDays = window.autoRestoreDays;
+                    
+                    updateDoc(doc(db, "words", currentWord.id), updateData);
                 } else {
                     const wIdx = allWords.findIndex(w => w.id === currentWord.id);
                     if (wIdx > -1) allWords[wIdx].perfectStreak = currentPerfectStreak;
