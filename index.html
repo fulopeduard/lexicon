@@ -1046,6 +1046,8 @@
         const targetParts = fullTarget.split(',');
         const targetMap = new Array(targetParts.length).fill(null);
 
+        let tempErrorsFound = 0;
+
         userParts.forEach(uPart => {
             if(!uPart) return;
             let bestMatchIdx = -1, maxMatchLen = -1;
@@ -1057,11 +1059,14 @@
                 while(matchLen < uLower.length && matchLen < tLower.length && uLower[matchLen] === tLower[matchLen]) matchLen++;
                 if (matchLen > maxMatchLen) { maxMatchLen = matchLen; bestMatchIdx = i; }
             }
-            if (bestMatchIdx !== -1) targetMap[bestMatchIdx] = uPart;
+            if (bestMatchIdx !== -1) {
+                targetMap[bestMatchIdx] = uPart;
+            } else {
+                tempErrorsFound += uPart.length;
+            }
         });
 
         let html = '', currentTargetIdx = 0, charInUserText = 0, wordCharIndex = 1;
-        let errorsFound = 0;
 
         for(let i = 0; i < fullTarget.length; i++) {
             const char = fullTarget[i];
@@ -1085,7 +1090,7 @@
             if(uText && charInUserText < uText.length) {
                 const uChar = uText[charInUserText];
                 const isMatch = uChar.toLowerCase() === char.toLowerCase();
-                if (!isMatch) errorsFound++;
+                if (!isMatch) tempErrorsFound++;
                 displayHTML = `<span class="${isMatch ? 'char-correct' : 'char-wrong'}">${uChar === ' ' ? '&nbsp;' : uChar}</span>`;
                 charInUserText++;
             }
@@ -1097,7 +1102,20 @@
             </div>`;
             wordCharIndex++;
         }
-        window.currentTestErrorCount = errorsFound;
+
+        targetMap.forEach((uText, idx) => {
+            if (uText) {
+                const tText = targetParts[idx].trim();
+                if (uText.length > tText.length) {
+                    tempErrorsFound += (uText.length - tText.length); 
+                }
+            }
+        });
+
+        if (tempErrorsFound > window.currentTestErrorCount && window.currentTestErrorCount !== 99) {
+            window.currentTestErrorCount = tempErrorsFound;
+        }
+
         document.getElementById('dynamic-display').innerHTML = html;
     };
 
@@ -1148,11 +1166,11 @@
                         allWords[wIdx].learned = true; 
                         allWords[wIdx].archivedAt = Date.now();
                         allWords[wIdx].perfectStreak = 0;
-                        if (!isPerm) allWords[wIdx].archiveDays = window.autoRestoreDays;
+                        if (!isPerm && !wasAlreadyLearned) allWords[wIdx].archiveDays = window.autoRestoreDays;
                     }
                     
                     const updateData = { learned: true, archivedAt: Date.now(), perfectStreak: 0 };
-                    if (!isPerm) updateData.archiveDays = window.autoRestoreDays;
+                    if (!isPerm && !wasAlreadyLearned) updateData.archiveDays = window.autoRestoreDays;
                     
                     updateDoc(doc(db, "words", currentWord.id), updateData);
                 } else {
@@ -1172,7 +1190,8 @@
                 res.innerHTML=`Helyes! ✅ +50 Pont<br><br><span style="font-size:1rem; color:var(--primary);">🎉 Gratulálok! ${window.autoArchiveThreshold}x hibátlanul (max 1 typo) beírtad, így archiváltuk!</span>`;
             } else if (justExtended) {
                 res.style.color='var(--success)'; 
-                const extendText = window.autoRestoreEnabled ? `az archívumban meghosszabbítva ${window.autoRestoreDays} nappal!` : "megerősítve az archívumban!";
+                const targetDays = currentWord.archiveDays || window.autoRestoreDays;
+                const extendText = window.autoRestoreEnabled ? `az archívumban meghosszabbítva ${targetDays} nappal!` : "megerősítve az archívumban!";
                 res.innerHTML=`Helyes! ✅ +50 Pont<br><br><span style="font-size:1rem; color:var(--primary);">🎉 Gratulálok! ${window.autoArchiveThreshold}x hibátlanul (max 1 typo) beírtad, így a szó ideje ${extendText}</span>`;
             } else {
                 res.style.color='var(--success)'; 
