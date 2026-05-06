@@ -361,7 +361,6 @@
     let activeWords = [];
     let archivedWords = [];
     let currentIndex = 0;
-    let archiveIndex = 0;
     let testList = [];
     let testIndex = 0;
 
@@ -740,44 +739,42 @@
         archivedWords = allWords.filter(w => w.lang === lang && w.learned === true);
         const area = document.getElementById('archive-area');
         document.getElementById('archive-counter').textContent = `Archivált: ${archivedWords.length}`;
-        if(!archivedWords.length) { area.innerHTML = `<div class="test-card"><p>Üres.</p></div>`; area.className = ''; return; }
-        if(archiveIndex >= archivedWords.length) archiveIndex = 0;
-        area.className = 'single-mode';
-        const w = archivedWords[archiveIndex];
         
-        // --- ÚJ RÉSZ: Hátralévő napok kiszámítása ---
-        let restoreInfo = '';
-        if (window.autoRestoreEnabled && w.archivedAt) {
-            const msInDay = 1000 * 60 * 60 * 24;
-            const daysLeft = Math.ceil((w.archivedAt + window.autoRestoreDays * msInDay - Date.now()) / msInDay);
-            const displayDays = daysLeft > 0 ? daysLeft : 0;
-            restoreInfo = `<div style="margin-top: 10px; font-size: 0.85rem; color: var(--text-sub);">⏳ Újraaktíválódik: <strong style="color:var(--primary)">${displayDays} nap</strong> múlva</div>`;
+        if(!archivedWords.length) { 
+            area.innerHTML = `<div class="test-card"><p>Üres.</p></div>`; 
+            area.className = ''; 
+            return; 
         }
+        
+        area.className = 'grid-mode';
+        let html = '';
+        
+        archivedWords.forEach(w => {
+            let restoreInfo = '';
+            if (window.autoRestoreEnabled && w.archivedAt) {
+                const msInDay = 1000 * 60 * 60 * 24;
+                const daysLeft = Math.ceil((w.archivedAt + window.autoRestoreDays * msInDay - Date.now()) / msInDay);
+                const displayDays = daysLeft > 0 ? daysLeft : 0;
+                restoreInfo = `<div style="margin-top: 10px; font-size: 0.85rem; color: var(--text-sub);">⏳ Újraaktíválódik: <strong style="color:var(--primary)">${displayDays} nap</strong> múlva</div>`;
+            }
 
-        area.innerHTML = `
-            <div class="card-container" onclick="flipThisCard(event, this)">
-                <div class="card">
-                    <div class="card-face card-front" style="border:2px solid var(--success)">
-                        <span style="position:absolute; top:20px; left:20px; color:var(--success); font-weight:bold;">Archivált</span>
-                        <h2>${w.word}</h2>
-                        <div class="card-actions-inline" onclick="event.stopPropagation()">
-                            <button onclick="prevArchive(event)">←</button>
-                            <button onclick="flipThisCard(event, this)">↻</button>
-                            <button onclick="nextArchive(event)">→</button>
+            html += `
+                <div class="card-container" onclick="flipThisCard(event, this)">
+                    <div class="card">
+                        <div class="card-face card-front" style="border:2px solid var(--success)">
+                            <span style="position:absolute; top:15px; left:15px; font-size: 0.8rem; color:var(--success); font-weight:bold;">Archivált</span>
+                            <h2>${w.word}</h2>
+                        </div>
+                        <div class="card-face card-back" style="border:2px solid var(--success)">
+                            <h3>${w.meaning}</h3>
+                            ${restoreInfo}
+                            <button class="btn-secondary" style="margin-top:15px; width:auto; padding: 6px 16px; border-radius: 20px; font-size:0.9rem;" onclick="restoreFromArchive('${w.id}', event)">Visszaállít ↺</button>
                         </div>
                     </div>
-                    <div class="card-face card-back" style="border:2px solid var(--success)">
-                        <h3>${w.meaning}</h3>
-                        ${restoreInfo}
-                        <button class="btn-secondary" style="margin-top:10px; width:auto; padding: 6px 16px; border-radius: 20px;" onclick="restoreFromArchive('${w.id}', event)">Visszaállít ↺</button>
-                        <div class="card-actions-inline" onclick="event.stopPropagation()">
-                            <button onclick="prevArchive(event)">←</button>
-                            <button onclick="flipThisCard(event, this)">↻</button>
-                            <button onclick="nextArchive(event)">→</button>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
+                </div>`;
+        });
+        
+        area.innerHTML = html;
     };
 
     window.switchTab = (tab) => {
