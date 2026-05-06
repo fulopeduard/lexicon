@@ -1158,21 +1158,33 @@
             if (window.autoArchiveEnabled && isWithinTolerance) {
                 currentPerfectStreak += 1;
                 if (currentPerfectStreak >= window.autoArchiveThreshold) {
-                    if (wasAlreadyLearned && !isPerm) justExtended = true;
-                    else if (!wasAlreadyLearned) justArchived = true;
+                    
+                    let newArchiveDays = window.autoRestoreDays;
+                    
+                    if (wasAlreadyLearned && !isPerm) {
+                        justExtended = true;
+                        const msInDay = 1000 * 60 * 60 * 24;
+                        const targetDays = currentWord.archiveDays || window.autoRestoreDays;
+                        let daysLeft = Math.ceil((currentWord.archivedAt + targetDays * msInDay - Date.now()) / msInDay);
+                        if (daysLeft < 0) daysLeft = 0;
+                        newArchiveDays = daysLeft + window.autoRestoreDays;
+                    } else if (!wasAlreadyLearned) {
+                        justArchived = true;
+                    }
                     
                     const wIdx = allWords.findIndex(w => w.id === currentWord.id);
                     if (wIdx > -1) {
                         allWords[wIdx].learned = true; 
                         allWords[wIdx].archivedAt = Date.now();
                         allWords[wIdx].perfectStreak = 0;
-                        if (!isPerm && !wasAlreadyLearned) allWords[wIdx].archiveDays = window.autoRestoreDays;
+                        if (!isPerm) allWords[wIdx].archiveDays = newArchiveDays;
                     }
                     
                     const updateData = { learned: true, archivedAt: Date.now(), perfectStreak: 0 };
-                    if (!isPerm && !wasAlreadyLearned) updateData.archiveDays = window.autoRestoreDays;
+                    if (!isPerm) updateData.archiveDays = newArchiveDays;
                     
                     updateDoc(doc(db, "words", currentWord.id), updateData);
+                    currentWord.tempNewArchiveDays = newArchiveDays;
                 } else {
                     const wIdx = allWords.findIndex(w => w.id === currentWord.id);
                     if (wIdx > -1) allWords[wIdx].perfectStreak = currentPerfectStreak;
@@ -1190,8 +1202,7 @@
                 res.innerHTML=`Helyes! ✅ +50 Pont<br><br><span style="font-size:1rem; color:var(--primary);">🎉 Gratulálok! ${window.autoArchiveThreshold}x hibátlanul (max 1 typo) beírtad, így archiváltuk!</span>`;
             } else if (justExtended) {
                 res.style.color='var(--success)'; 
-                const targetDays = currentWord.archiveDays || window.autoRestoreDays;
-                const extendText = window.autoRestoreEnabled ? `az archívumban meghosszabbítva ${targetDays} nappal!` : "megerősítve az archívumban!";
+                const extendText = window.autoRestoreEnabled ? `az archívumban meghosszabbítva ${window.autoRestoreDays} nappal! (Így összesen ${currentWord.tempNewArchiveDays} napod maradt a következő ismétlésig)` : "megerősítve az archívumban!";
                 res.innerHTML=`Helyes! ✅ +50 Pont<br><br><span style="font-size:1rem; color:var(--primary);">🎉 Gratulálok! ${window.autoArchiveThreshold}x hibátlanul (max 1 typo) beírtad, így a szó ideje ${extendText}</span>`;
             } else {
                 res.style.color='var(--success)'; 
