@@ -149,16 +149,6 @@
         .char-hint { opacity: 0.5; }
         .test-controls { display: flex; gap: 10px; justify-content: center; margin-bottom: 15px; flex-wrap: wrap; }
 
-        /* --- SPELLING (HELYESÍRÁS) --- */
-        .spell-card-container { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; max-width: 400px; margin: 0 auto; min-height: 250px; background: var(--bg-card); border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border); padding: 30px; position: relative; overflow: hidden; }
-        .spell-choices { display: flex; width: 100%; gap: 15px; margin-top: 30px; }
-        .spell-btn { flex: 1; padding: 20px 10px; font-size: 1.2rem; font-weight: bold; border-radius: 16px; border: 2px solid var(--border); background: var(--bg-input); color: var(--text-main); cursor: pointer; transition: all 0.2s; word-break: break-word; }
-        .spell-btn:hover { border-color: var(--primary); transform: translateY(-3px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2); }
-        .spell-btn.correct { background: var(--success); color: white; border-color: var(--success); }
-        .spell-btn.wrong { background: var(--error); color: white; border-color: var(--error); }
-        .spell-feedback { position: absolute; top: 20px; font-weight: bold; font-size: 1.2rem; opacity: 0; transition: opacity 0.3s; }
-        .spell-feedback.show { opacity: 1; }
-
         /* MODAL */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 100; }
         .modal-overlay.open { display: flex; }
@@ -216,7 +206,6 @@
         <button onclick="switchTab('learn')" id="tab-learn" class="active">Tanulás</button>
         <button onclick="switchTab('database')" id="tab-database">Adatbázis</button>
         <button onclick="switchTab('test')" id="tab-test">Teszt</button>
-        <button onclick="switchTab('spelling')" id="tab-spelling">Helyesírás</button>
         <button onclick="switchTab('archive')" id="tab-archive">Archívum</button>
         <button onclick="switchTab('add')" id="tab-add">Új szó</button>
     </nav>
@@ -275,48 +264,6 @@
         </div>
         <div class="test-card">
             <div id="test-content"></div>
-        </div>
-    </section>
-
-    <section id="view-spelling" class="view-section">
-        <div style="display: flex; gap: 10px; margin-bottom: 20px; max-width: 500px; margin-left: auto; margin-right: auto;">
-            <button class="btn-secondary active" style="flex:1;" onclick="document.getElementById('spell-play-area').classList.remove('hidden'); document.getElementById('spell-add-area').classList.add('hidden'); window.initSpelling();">Gyakorlás</button>
-            <button class="btn-secondary" style="flex:1;" onclick="document.getElementById('spell-play-area').classList.add('hidden'); document.getElementById('spell-add-area').classList.remove('hidden');">Szavak hozzáadása</button>
-        </div>
-
-        <div id="spell-play-area">
-            <div id="spell-card-wrapper" class="spell-card-container">
-                <div id="spell-feedback" class="spell-feedback"></div>
-                <h2 style="font-size: 1.5rem; text-align: center; color: var(--text-sub);">Melyik a helyes?</h2>
-                <div class="spell-choices" id="spell-choices-container">
-                    </div>
-            </div>
-        </div>
-
-        <div id="spell-add-area" class="hidden">
-            <div style="background: var(--bg-card); padding: 25px; border-radius: var(--radius); border: 1px solid var(--border); max-width: 500px; margin: 0 auto;">
-                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                    <button class="btn-secondary" style="width:auto; flex:1;" onclick="document.getElementById('spell-add-single').classList.remove('hidden'); document.getElementById('spell-add-bulk').classList.add('hidden');">Egyesével</button>
-                    <button class="btn-secondary" style="width:auto; flex:1;" onclick="document.getElementById('spell-add-single').classList.add('hidden'); document.getElementById('spell-add-bulk').classList.remove('hidden');">Tömeges</button>
-                </div>
-
-                <div id="spell-add-single">
-                    <input type="text" id="spell-inp-correct" placeholder="Helyes forma (pl. muszáj)">
-                    <input type="text" id="spell-inp-incorrect" placeholder="Helytelen forma (pl. muszály)">
-                    <button class="btn-primary" onclick="window.addSpellingWord()">Mentés</button>
-                </div>
-
-                <div id="spell-add-bulk" class="hidden">
-                    <p style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 10px;">Formátum: Helyes - Helytelen (soronként egy pár)</p>
-                    <textarea id="spell-inp-bulk" rows="6" placeholder="muszáj - muszály&#10;mindig - minndig"></textarea>
-                    <button class="btn-primary" onclick="window.addBulkSpelling()">Tömeges Mentés</button>
-                </div>
-                
-                <div style="margin-top: 30px;">
-                    <h3 style="font-size: 1.1rem; margin-bottom: 10px; color: var(--primary);">Hozzáadott szópárok:</h3>
-                    <div id="spell-list-area" style="max-height: 200px; overflow-y: auto; background: var(--bg-input); padding: 10px; border-radius: 12px; border: 1px solid var(--border);"></div>
-                </div>
-            </div>
         </div>
     </section>
 
@@ -501,10 +448,8 @@
 
     let currentUser = null;
     let authMode = 'login';
-    
     let allWords = [];
     let allFolders = [];
-    let allSpellingWords = []; // Helyesírás szavak
     
     let activeWords = [];
     let archivedWords = [];
@@ -517,9 +462,6 @@
 
     let testList = [];
     let testIndex = 0;
-
-    let spellingTestList = [];
-    let spellingTestIndex = 0;
 
     let revealedHints = [];
     let hintCountForCurrentWord = 0;
@@ -664,14 +606,6 @@
             }
 
             allWords.sort((a, b) => b.createdAt - a.createdAt);
-            
-            // Helyesírás szavak lekérése
-            const sq = query(collection(db, "spelling_words"), where("uid", "==", currentUser.uid));
-            const sSnap = await getDocs(sq);
-            allSpellingWords = [];
-            sSnap.forEach(d => allSpellingWords.push({id: d.id, ...d.data()}));
-            allSpellingWords.sort((a, b) => b.createdAt - a.createdAt);
-            window.renderSpellingList();
             
             window.updateFolderSelects();
             window.updateLangLists();
@@ -1120,7 +1054,7 @@
     };
 
     function generateCardHTML(w, isCompact, context = 'learn') {
-        const prevFn = context === 'db' ? 'window.dbPrevCard' : 'window.dbNextCard';
+        const prevFn = context === 'db' ? 'window.dbPrevCard' : 'window.prevCard';
         const nextFn = context === 'db' ? 'window.dbNextCard' : 'window.nextCard';
 
         const controlsHTML = isCompact ? '' : `
@@ -1232,7 +1166,6 @@
         if(tab === 'learn') window.filterAndRenderCards(); 
         if(tab === 'archive') window.renderArchive();
         if(tab === 'database') window.renderDatabase();
-        if(tab === 'spelling') window.initSpelling();
         if(tab === 'add') setTimeout(() => { const el = document.getElementById('inp-word'); if(el) el.focus(); }, 50);
     };
 
@@ -1603,133 +1536,6 @@
     };
 
     window.nextTestItem = () => { testIndex++; window.renderTest(); };
-
-    // --- HELYESÍRÁS (SPELLING) LOGIKA ---
-    window.addSpellingWord = async () => {
-        const c = document.getElementById('spell-inp-correct').value.trim();
-        const i = document.getElementById('spell-inp-incorrect').value.trim();
-        if(!c || !i) return alert('Töltsd ki mindkét mezőt!');
-        try {
-            const docRef = await addDoc(collection(db, "spelling_words"), { uid: currentUser.uid, correct: c, incorrect: i, createdAt: Date.now() });
-            allSpellingWords.unshift({ id: docRef.id, correct: c, incorrect: i });
-            document.getElementById('spell-inp-correct').value = '';
-            document.getElementById('spell-inp-incorrect').value = '';
-            window.renderSpellingList();
-            alert("Mentve!");
-        } catch (e) { alert("Hiba: " + e.message); }
-    };
-
-    window.addBulkSpelling = async () => {
-        const text = document.getElementById('spell-inp-bulk').value;
-        if(!text) return;
-        const batch = writeBatch(db);
-        const lines = text.split('\n');
-        let count = 0;
-        
-        lines.forEach(line => {
-            const dashIndex = line.indexOf('-');
-            if(dashIndex !== -1) {
-                const c = line.substring(0, dashIndex).trim();
-                const i = line.substring(dashIndex + 1).trim();
-                if (c && i) {
-                    const docRef = doc(collection(db, "spelling_words"));
-                    const data = { uid: currentUser.uid, correct: c, incorrect: i, createdAt: Date.now() };
-                    batch.set(docRef, data);
-                    allSpellingWords.unshift({ id: docRef.id, ...data });
-                    count++;
-                }
-            }
-        });
-        
-        if(count > 0) { 
-            await batch.commit(); 
-            document.getElementById('spell-inp-bulk').value = ''; 
-            window.renderSpellingList();
-            alert(`Sikeresen importálva ${count} szópár!`); 
-        }
-    };
-
-    window.deleteSpellingWord = async (id) => {
-        if(!confirm("Biztos törlöd ezt a szópárt?")) return;
-        try {
-            await deleteDoc(doc(db, "spelling_words", id));
-            allSpellingWords = allSpellingWords.filter(w => w.id !== id);
-            window.renderSpellingList();
-        } catch(e) { alert("Hiba: " + e.message); }
-    };
-
-    window.renderSpellingList = () => {
-        const list = document.getElementById('spell-list-area');
-        if(!list) return;
-        if(allSpellingWords.length === 0) {
-            list.innerHTML = '<p style="color:var(--text-sub); font-size:0.9rem;">Még nincsenek szópárok.</p>';
-            return;
-        }
-        list.innerHTML = allSpellingWords.map(w => `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px; border-bottom:1px solid var(--border);">
-                <div><span style="color:var(--success); font-weight:bold;">${w.correct}</span> vs <span style="color:var(--error);">${w.incorrect}</span></div>
-                <button onclick="window.deleteSpellingWord('${w.id}')" style="background:none; border:none; color:var(--error); cursor:pointer; font-size:1.2rem;">×</button>
-            </div>
-        `).join('');
-    };
-
-    window.initSpelling = () => {
-        spellingTestList = [...allSpellingWords].sort(() => Math.random() - 0.5);
-        spellingTestIndex = 0;
-        window.renderSpellingCard();
-    };
-
-    window.renderSpellingCard = () => {
-        const container = document.getElementById('spell-choices-container');
-        const feedback = document.getElementById('spell-feedback');
-        feedback.className = 'spell-feedback'; // Reset feedback state
-        
-        if(!spellingTestList || spellingTestList.length === 0) {
-            container.innerHTML = `<p style="text-align:center; width:100%;">Nincsenek helyesírási szavak. Adj hozzá párokat!</p>`;
-            return;
-        }
-        if(spellingTestIndex >= spellingTestList.length) {
-            container.innerHTML = `<div style="text-align:center; width:100%;"><h3 style="margin-bottom:15px;">Vége! 🎉</h3><button class="btn-primary" onclick="window.initSpelling()">Újra</button></div>`;
-            return;
-        }
-        
-        const current = spellingTestList[spellingTestIndex];
-        
-        // Randomizáljuk, hogy balra vagy jobbra kerül a helyes megoldás
-        const isCorrectLeft = Math.random() > 0.5;
-        const leftWord = isCorrectLeft ? current.correct : current.incorrect;
-        const rightWord = isCorrectLeft ? current.incorrect : current.correct;
-        
-        container.innerHTML = `
-            <button class="spell-btn" onclick="window.checkSpelling(${isCorrectLeft}, this, this.nextElementSibling)">${leftWord}</button>
-            <button class="spell-btn" onclick="window.checkSpelling(${!isCorrectLeft}, this, this.previousElementSibling)">${rightWord}</button>
-        `;
-    };
-
-    window.checkSpelling = (isCorrect, clickedBtn, otherBtn) => {
-        if(clickedBtn.disabled) return;
-        clickedBtn.disabled = true;
-        if(otherBtn) otherBtn.disabled = true;
-        
-        const feedback = document.getElementById('spell-feedback');
-        feedback.classList.add('show');
-        
-        if(isCorrect) {
-            clickedBtn.classList.add('correct');
-            feedback.textContent = 'Helyes! ✅';
-            feedback.style.color = 'var(--success)';
-        } else {
-            clickedBtn.classList.add('wrong');
-            if(otherBtn) otherBtn.classList.add('correct');
-            feedback.textContent = 'Helytelen! ❌';
-            feedback.style.color = 'var(--error)';
-        }
-        
-        setTimeout(() => {
-            spellingTestIndex++;
-            window.renderSpellingCard();
-        }, 1200);
-    };
 </script>
 </body>
 </html>
