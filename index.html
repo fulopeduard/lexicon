@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lexicon Aura v3</title>
+    <title>Lexicon Aura v5</title>
     <style>
         /* --- TÉMÁK ÉS VÁLTOZÓK --- */
         :root {
@@ -214,6 +214,40 @@
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
         .hidden { display: none !important; }
+
+        /* BULK SELECTION MODE */
+        .bulk-mode-active .card-container {
+            cursor: pointer;
+            user-select: none;
+        }
+        .bulk-mode-active .lang-tag {
+            left: 45px !important;
+        }
+        .bulk-check-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 3px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+            transition: transform 0.15s ease;
+        }
+        .bulk-check-badge:hover {
+            transform: scale(1.1);
+        }
+        .card-container.card-bulk-selected .card {
+            box-shadow: 0 0 0 3px var(--primary), 0 8px 25px rgba(99, 102, 241, 0.35) !important;
+            border-radius: var(--radius);
+        }
+        .card-container.card-bulk-selected .card-face {
+            border-color: var(--primary) !important;
+        }
     </style>
 </head>
 <body>
@@ -299,9 +333,38 @@
                 </div>
                 
                 <div class="learn-header-bar">
-                    <select id="db-lang-select" onchange="window.renderFolderWords()" style="width: auto; margin:0; padding: 8px 16px;"></select>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                        <select id="db-lang-select" onchange="window.renderFolderWords()" style="width: auto; margin:0; padding: 8px 16px;"></select>
+                        <button id="btn-toggle-db-search" class="icon-btn" style="display: none; padding: 8px 12px; margin: 0; font-size: 1rem;" onclick="window.toggleDbSearch()" title="Kereső megjelenítése/elrejtése">🔍</button>
+                        <button id="btn-db-bulk-mode" class="btn-secondary" style="display: none; width: auto; padding: 7px 14px; margin: 0; font-size: 0.85rem; align-items: center; gap: 6px;" onclick="window.toggleDbBulkMode()"><span id="btn-db-bulk-mode-text">☑️ Kijelölés</span></button>
+                    </div>
                     <span id="db-card-counter" style="color: var(--text-sub); font-weight: 600;">0 / 0</span>
                 </div>
+
+                <div id="db-bulk-toolbar" style="display: none; width: 100%; max-width: 1000px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; margin: 0 auto 15px auto; box-shadow: 0 4px 15px rgba(0,0,0,0.06); animation: slideUp 0.2s ease;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0; font-weight: 600; font-size: 0.9rem; user-select: none;">
+                                <input type="checkbox" id="db-select-all-checkbox" onchange="window.handleDbSelectAll(this.checked)" style="width: 18px; height: 18px; cursor: pointer; margin: 0; accent-color: var(--primary);">
+                                <span>Összes kijelölése</span>
+                            </label>
+                            <span id="db-selected-count" style="font-size: 0.85rem; color: var(--primary); font-weight: 700; background: rgba(99, 102, 241, 0.12); padding: 3px 10px; border-radius: 12px;">0 kiválasztva</span>
+                        </div>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button class="btn-primary" id="btn-bulk-move" onclick="window.openBulkMoveModal()" style="width: auto; padding: 7px 14px; font-size: 0.85rem; margin: 0; opacity: 0.5; pointer-events: none;" title="Kijelölt szavak áthelyezése">📂 Áthelyezés...</button>
+                            <button class="btn-danger" id="btn-bulk-delete" onclick="window.bulkDeleteWords()" style="width: auto; padding: 7px 14px; font-size: 0.85rem; margin: 0; opacity: 0.5; pointer-events: none;" title="Kijelölt szavak törlése">🗑 Törlés</button>
+                            <button class="btn-secondary" onclick="window.toggleDbBulkMode(false)" style="width: auto; padding: 7px 12px; font-size: 0.85rem; margin: 0;" title="Kijelölés megszüntetése">Mégse</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="db-search-container" style="display: none; max-width: 500px; margin: 0 auto 20px auto; width: 100%; animation: slideUp 0.3s;">
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="db-search-input" placeholder="Keresés szó vagy jelentés alapján..." oninput="window.renderFolderWords()" style="margin-bottom: 0; flex: 1;">
+                        <button class="btn-secondary" style="width: auto; padding: 0 15px;" onclick="window.toggleDbSearch()" title="Keresés bezárása">✖</button>
+                    </div>
+                </div>
+
                 <div id="db-flashcard-area"></div>
             </div>
         </section>
@@ -309,7 +372,7 @@
         <section id="view-test" class="view-section">
             <div style="display: flex; gap: 10px; max-width: 500px; margin: 0 auto 20px auto; flex-wrap: wrap;">
                 <select id="test-type-select" onchange="window.initTest()" style="margin-bottom: 0; flex: 1; min-width: 120px;">
-                    <option value="active">Aktív (Alapértelmezett)</option>
+                    <option value="active">Tanulás (Alapértelmezett)</option>
                     <option value="all_active">Minden aktív szó (Összes)</option>
                     <option value="archive">Archívum (Összes)</option>
                     <optgroup label="Mappák" id="test-folder-group"></optgroup>
@@ -440,6 +503,23 @@
     </div>
 </div>
 
+<div class="modal-overlay" id="bulk-move-modal">
+    <div class="modal-content" style="max-width: 440px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+            <h3 style="margin:0; color:var(--primary); display:flex; align-items:center; gap:8px;">📂 Áthelyezés mappába</h3>
+            <button onclick="window.closeBulkMoveModal()" style="border:none; background:none; font-size:1.5rem; cursor:pointer; color:var(--text-main);">×</button>
+        </div>
+        <p id="bulk-move-info" style="color:var(--text-sub); margin-bottom:15px; font-size:0.95rem;">Válaszd ki a célmappát a kijelölt szavak számára:</p>
+        
+        <select id="bulk-target-folder-select" style="margin-bottom: 25px; font-size: 1rem; width: 100%; padding: 10px;"></select>
+        
+        <div style="display: flex; gap: 10px;">
+            <button class="btn-secondary" onclick="window.closeBulkMoveModal()" style="flex: 1;">Mégse</button>
+            <button class="btn-primary" onclick="window.confirmBulkMove()" style="flex: 1;">Áthelyezés</button>
+        </div>
+    </div>
+</div>
+
 <div class="modal-overlay" id="settings-modal">
     <div class="modal-content">
         <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
@@ -515,6 +595,8 @@
     window.currentDatabaseFolderId = null;
     let activeDbWords = [];
     let dbCurrentIndex = 0;
+    let isDbBulkMode = false;
+    let selectedWordIds = new Set();
     let testList = [];
     let testIndex = 0;
     let revealedHints = [];
@@ -694,6 +776,7 @@
     };
 
     window.getFolderName = (id) => {
+        if (id === '__learn__' || !id) return 'Tanulás';
         const f = allFolders.find(x => x.id === id);
         return f ? f.name : '';
     };
@@ -732,42 +815,304 @@
     };
 
     window.openFolderView = (folderId) => {
+        window.toggleDbBulkMode(false);
         window.currentDatabaseFolderId = folderId;
         document.getElementById('database-root').style.display = 'none';
         document.getElementById('database-folder-view').style.display = 'block';
-        const f = allFolders.find(f => f.id === folderId);
-        document.getElementById('current-folder-name').textContent = f ? f.name : 'Mappa';
+        if (folderId === '__learn__') {
+            document.getElementById('current-folder-name').textContent = '📖 Tanulás (Alapértelmezett)';
+        } else {
+            const f = allFolders.find(f => f.id === folderId);
+            document.getElementById('current-folder-name').textContent = f ? `📂 ${f.name}` : 'Mappa';
+        }
         dbCurrentIndex = 0;
         window.renderFolderWords();
     };
 
     window.closeFolderView = () => {
+        window.toggleDbBulkMode(false);
         window.currentDatabaseFolderId = null;
+        const searchContainer = document.getElementById('db-search-container');
+        const searchInput = document.getElementById('db-search-input');
+        if(searchContainer) searchContainer.style.display = 'none';
+        if(searchInput) searchInput.value = '';
         document.getElementById('database-root').style.display = 'block';
         document.getElementById('database-folder-view').style.display = 'none';
         window.renderDatabase();
     };
 
+    window.toggleDbSearch = () => {
+        const container = document.getElementById('db-search-container');
+        const input = document.getElementById('db-search-input');
+        if (container.style.display === 'none' || container.style.display === '') {
+            container.style.display = 'block';
+            input.focus();
+        } else {
+            container.style.display = 'none';
+            input.value = '';
+            window.renderFolderWords();
+        }
+    };
+
+    async function commitBatches(operations) {
+        const CHUNK_SIZE = 400;
+        for (let i = 0; i < operations.length; i += CHUNK_SIZE) {
+            const chunk = operations.slice(i, i + CHUNK_SIZE);
+            const batch = writeBatch(db);
+            chunk.forEach(op => op(batch));
+            await batch.commit();
+        }
+    }
+
+    window.toggleDbBulkMode = (forcedState) => {
+        if (forcedState !== undefined) {
+            isDbBulkMode = forcedState;
+        } else {
+            isDbBulkMode = !isDbBulkMode;
+        }
+
+        if (!isDbBulkMode) {
+            selectedWordIds.clear();
+        }
+
+        const toolbar = document.getElementById('db-bulk-toolbar');
+        if (toolbar) toolbar.style.display = isDbBulkMode ? 'block' : 'none';
+
+        const btn = document.getElementById('btn-db-bulk-mode');
+        const btnText = document.getElementById('btn-db-bulk-mode-text');
+        if (btn) {
+            btn.classList.toggle('btn-primary', isDbBulkMode);
+            btn.classList.toggle('btn-secondary', !isDbBulkMode);
+        }
+        if (btnText) {
+            btnText.textContent = isDbBulkMode ? '✖ Bezárás' : '☑️ Kijelölés';
+        }
+
+        const viewDbEl = document.getElementById('database-folder-view');
+        if (viewDbEl) {
+            viewDbEl.classList.toggle('bulk-mode-active', isDbBulkMode);
+        }
+
+        window.renderFolderWords();
+        window.updateDbBulkUI();
+    };
+
+    window.toggleSelectWord = (id) => {
+        if (selectedWordIds.has(id)) {
+            selectedWordIds.delete(id);
+        } else {
+            selectedWordIds.add(id);
+        }
+
+        const cardEl = document.getElementById('card-container-' + id);
+        if (cardEl) {
+            cardEl.classList.toggle('card-bulk-selected', selectedWordIds.has(id));
+        }
+        const chk = document.getElementById('chk-word-' + id);
+        if (chk) chk.checked = selectedWordIds.has(id);
+
+        window.updateDbBulkUI();
+    };
+
+    window.handleDbSelectAll = (isChecked) => {
+        const filteredWords = window.currentDbFilteredWords || [];
+        filteredWords.forEach(w => {
+            if (isChecked) selectedWordIds.add(w.id);
+            else selectedWordIds.delete(w.id);
+        });
+        window.renderFolderWords();
+    };
+
+    window.updateDbBulkUI = () => {
+        const toolbar = document.getElementById('db-bulk-toolbar');
+        if (!toolbar) return;
+        toolbar.style.display = isDbBulkMode ? 'block' : 'none';
+
+        const btn = document.getElementById('btn-db-bulk-mode');
+        const btnText = document.getElementById('btn-db-bulk-mode-text');
+        if (btn) {
+            btn.classList.toggle('btn-primary', isDbBulkMode);
+            btn.classList.toggle('btn-secondary', !isDbBulkMode);
+        }
+        if (btnText) {
+            btnText.textContent = isDbBulkMode ? '✖ Bezárás' : '☑️ Kijelölés';
+        }
+
+        if (!isDbBulkMode) return;
+
+        const count = selectedWordIds.size;
+        const countEl = document.getElementById('db-selected-count');
+        if (countEl) countEl.textContent = `${count} kiválasztva`;
+
+        const filteredWords = window.currentDbFilteredWords || [];
+        const allChecked = filteredWords.length > 0 && filteredWords.every(w => selectedWordIds.has(w.id));
+        const chkAll = document.getElementById('db-select-all-checkbox');
+        if (chkAll) {
+            chkAll.checked = allChecked;
+            chkAll.indeterminate = count > 0 && !allChecked;
+        }
+
+        const btnMove = document.getElementById('btn-bulk-move');
+        const btnDelete = document.getElementById('btn-bulk-delete');
+        if (btnMove) {
+            btnMove.style.opacity = count > 0 ? '1' : '0.5';
+            btnMove.style.pointerEvents = count > 0 ? 'auto' : 'none';
+        }
+        if (btnDelete) {
+            btnDelete.style.opacity = count > 0 ? '1' : '0.5';
+            btnDelete.style.pointerEvents = count > 0 ? 'auto' : 'none';
+        }
+    };
+
+    window.openBulkMoveModal = () => {
+        if (!selectedWordIds.size) return;
+        const select = document.getElementById('bulk-target-folder-select');
+        if (!select) return;
+
+        let optionsHtml = '';
+        const isLearn = window.currentDatabaseFolderId === '__learn__';
+        
+        if (!isLearn) {
+            optionsHtml += `<option value="">📖 Tanulás (Alapértelmezett)</option>`;
+        }
+
+        allFolders.forEach(f => {
+            if (f.id !== window.currentDatabaseFolderId) {
+                optionsHtml += `<option value="${f.id}">📂 ${f.name}</option>`;
+            }
+        });
+
+        if (!optionsHtml) {
+            optionsHtml = `<option value="" disabled>Nincs más elérhető mappa. Hozz létre egy új mappát!</option>`;
+        }
+
+        select.innerHTML = optionsHtml;
+        const infoEl = document.getElementById('bulk-move-info');
+        if (infoEl) infoEl.textContent = `Válaszd ki a célmappát a(z) ${selectedWordIds.size} kijelölt szó számára:`;
+        document.getElementById('bulk-move-modal').classList.add('open');
+    };
+
+    window.closeBulkMoveModal = () => {
+        document.getElementById('bulk-move-modal').classList.remove('open');
+    };
+
+    window.confirmBulkMove = async () => {
+        const select = document.getElementById('bulk-target-folder-select');
+        if (!select || select.disabled) return;
+        
+        const targetFolderId = select.value;
+        const selectedIds = Array.from(selectedWordIds);
+        if (!selectedIds.length) return;
+
+        const targetName = targetFolderId ? window.getFolderName(targetFolderId) : 'Tanulás';
+
+        try {
+            const operations = selectedIds.map(id => {
+                return (batch) => {
+                    batch.update(doc(db, "words", id), { folderId: targetFolderId });
+                };
+            });
+
+            await commitBatches(operations);
+
+            selectedIds.forEach(id => {
+                const w = allWords.find(x => x.id === id);
+                if (w) w.folderId = targetFolderId;
+            });
+
+            const count = selectedIds.length;
+            selectedWordIds.clear();
+            window.closeBulkMoveModal();
+            window.toggleDbBulkMode(false);
+
+            window.filterAndRenderCards();
+            if (window.currentDatabaseFolderId) window.renderFolderWords();
+            window.renderDatabase();
+
+            alert(`Sikeresen áthelyezve ${count} szó a(z) "${targetName}" mappába!`);
+        } catch (err) {
+            console.error(err);
+            alert("Hiba történt az áthelyezés során: " + err.message);
+        }
+    };
+
+    window.bulkDeleteWords = async () => {
+        const selectedIds = Array.from(selectedWordIds);
+        const count = selectedIds.length;
+        if (!count) return;
+
+        if (!confirm(`Biztosan törölni szeretnéd a kijelölt ${count} szót? Ez a művelet végleges és nem vonható vissza!`)) {
+            return;
+        }
+
+        try {
+            const operations = selectedIds.map(id => {
+                return (batch) => {
+                    batch.delete(doc(db, "words", id));
+                };
+            });
+
+            await commitBatches(operations);
+
+            const deletedSet = new Set(selectedIds);
+            allWords = allWords.filter(w => !deletedSet.has(w.id));
+
+            selectedWordIds.clear();
+            window.toggleDbBulkMode(false);
+
+            window.updateLangLists();
+            window.filterAndRenderCards();
+            window.renderArchive();
+            if (window.currentDatabaseFolderId) window.renderFolderWords();
+            window.renderDatabase();
+
+            alert(`Sikeresen törölve ${count} szó!`);
+        } catch (err) {
+            console.error(err);
+            alert("Hiba történt a törlés során: " + err.message);
+        }
+    };
+
     window.renderDatabase = () => {
         const list = document.getElementById('folder-list');
         if(!list) return;
-        if(!allFolders.length) {
-            list.innerHTML = `<div class="test-card" style="grid-column: 1 / -1;"><p>Még nincsenek mappáid. Hozz létre egyet!</p></div>`;
-        } else {
-            list.innerHTML = allFolders.map(f => {
+        if (!window.currentDatabaseFolderId) {
+            document.getElementById('database-root').style.display = 'block';
+            document.getElementById('database-folder-view').style.display = 'none';
+        }
+
+        const learnWordCount = allWords.filter(w => (!w.folderId || w.folderId === '') && !w.learned).length;
+
+        let html = `
+        <div class="card-container" onclick="window.openFolderView('__learn__')" style="height: 120px; cursor: pointer;">
+            <div class="card">
+                <div class="card-face card-front" style="padding: 20px; align-items: flex-start; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border: 2px solid var(--primary);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 5px;">
+                        <h3 style="margin:0; color:var(--primary); display:flex; align-items:center; gap:8px;">📖 Tanulás</h3>
+                        <span style="font-size:0.75rem; background:rgba(99, 102, 241, 0.15); color:var(--primary); padding:3px 8px; border-radius:10px; font-weight:600;">Alapértelmezett</span>
+                    </div>
+                    <p style="font-size:0.85rem; color:var(--text-sub); margin:0;">${learnWordCount} aktív szó</p>
+                </div>
+            </div>
+        </div>`;
+
+        if(allFolders.length > 0) {
+            html += allFolders.map(f => {
                 const wordCount = allWords.filter(w => w.folderId === f.id && !w.learned).length;
                 return `
-                <div class="card-container" onclick="window.openFolderView('${f.id}')" style="height: 120px;">
+                <div class="card-container" onclick="window.openFolderView('${f.id}')" style="height: 120px; cursor: pointer;">
                     <div class="card">
                         <div class="card-face card-front" style="padding: 20px; align-items: flex-start; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border: 2px solid transparent;">
                             <h3 style="margin-bottom:5px; color:var(--primary); display:flex; align-items:center; gap:8px;">📂 ${f.name}</h3>
-                            <p style="font-size:0.85rem; color:var(--text-sub);">${wordCount} aktív szó</p>
-                            <button onclick="window.deleteFolder('${f.id}', event)" style="position:absolute; top:15px; right:15px; background:var(--bg-body); border:1px solid var(--border); border-radius:50%; width:30px; height:30px; color:var(--error); font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">🗑</button>
+                            <p style="font-size:0.85rem; color:var(--text-sub); margin:0;">${wordCount} aktív szó</p>
+                            <button onclick="window.deleteFolder('${f.id}', event)" style="position:absolute; top:15px; right:15px; background:var(--bg-body); border:1px solid var(--border); border-radius:50%; width:30px; height:30px; color:var(--error); font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;" title="Mappa törlése">🗑</button>
                         </div>
                     </div>
                 </div>`;
             }).join('');
         }
+
+        list.innerHTML = html;
     };
 
     window.handleLangSelectChange = () => {
@@ -1073,7 +1418,10 @@
         const langEl = document.getElementById('db-lang-select');
         if (!langEl) return;
         
-        const folderWordsTotal = allWords.filter(w => w.folderId === window.currentDatabaseFolderId && !w.learned);
+        const isLearnFolder = window.currentDatabaseFolderId === '__learn__';
+        const isMatch = w => (isLearnFolder ? (!w.folderId || w.folderId === '') : w.folderId === window.currentDatabaseFolderId);
+
+        const folderWordsTotal = allWords.filter(w => isMatch(w) && !w.learned);
         const langs = [...new Set(folderWordsTotal.map(w => w.lang))];
         
         let html = '';
@@ -1086,39 +1434,79 @@
         const selectedLang = langEl.value || langs[0];
         langEl.innerHTML = html;
         if(langs.length > 0 && !langs.includes(selectedLang)) langEl.value = langs[0];
-        else if(langs.length > 0) langEl.value = selectedLang;
+        if (window.lastDbLang !== langEl.value) {
+            selectedWordIds.clear();
+            window.lastDbLang = langEl.value;
+        }
 
-        activeDbWords = allWords.filter(w => w.folderId === window.currentDatabaseFolderId && !w.learned && w.lang === langEl.value);
+        activeDbWords = allWords.filter(w => isMatch(w) && !w.learned && w.lang === langEl.value);
         
         const area = document.getElementById('db-flashcard-area');
         const counter = document.getElementById('db-card-counter');
         const viewDbEl = document.getElementById('database-folder-view');
-        if (viewDbEl) viewDbEl.classList.toggle('grid-view-active', isLearnGridView);
         
+        const isEffectiveGrid = isLearnGridView || isDbBulkMode;
+        if (viewDbEl) {
+            viewDbEl.classList.toggle('grid-view-active', isEffectiveGrid);
+            viewDbEl.classList.toggle('bulk-mode-active', isDbBulkMode);
+        }
+        
+        const searchInputEl = document.getElementById('db-search-input');
+        const searchInput = searchInputEl ? searchInputEl.value.toLowerCase() : '';
+        const searchBtn = document.getElementById('btn-toggle-db-search');
+        const searchContainer = document.getElementById('db-search-container');
+        const bulkBtn = document.getElementById('btn-db-bulk-mode');
+
+        if (isEffectiveGrid && activeDbWords.length > 0) {
+            if(searchBtn) searchBtn.style.display = 'flex';
+        } else {
+            if(searchBtn) searchBtn.style.display = 'none';
+            if(searchContainer) searchContainer.style.display = 'none';
+            if(searchInputEl) searchInputEl.value = ''; 
+        }
+
+        if (bulkBtn) {
+            bulkBtn.style.display = activeDbWords.length > 0 ? 'inline-flex' : 'none';
+        }
+
         if(!activeDbWords.length) {
-            area.innerHTML = `<div class="test-card"><p>Nincs aktív tanulnivaló a mappában ezen a nyelven.</p></div>`;
+            if (isDbBulkMode) window.toggleDbBulkMode(false);
+            const noWordsMsg = isLearnFolder 
+                ? "Nincs aktív tanulnivaló a Tanulás szekcióban ezen a nyelven." 
+                : "Nincs aktív tanulnivaló a mappában ezen a nyelven.";
+            area.innerHTML = `<div class="test-card"><p>${noWordsMsg}</p></div>`;
             area.className = '';
             counter.textContent = "0 / 0";
             return;
         }
 
-        if(isLearnGridView) {
+        const filteredWords = activeDbWords.filter(w => w.word.toLowerCase().includes(searchInput) || w.meaning.toLowerCase().includes(searchInput));
+        window.currentDbFilteredWords = filteredWords;
+
+        if(isEffectiveGrid) {
             area.className = 'grid-mode';
-            counter.textContent = `Összes: ${activeDbWords.length}`;
-            area.innerHTML = activeDbWords.map(w => generateCardHTML(w, true, 'db')).join('');
+            counter.textContent = `Összes: ${filteredWords.length} / ${activeDbWords.length}`;
+            if (filteredWords.length === 0) area.innerHTML = `<div class="test-card" style="grid-column: 1 / -1;"><p>Nincs találat erre: "${searchInput}"</p></div>`;
+            else area.innerHTML = filteredWords.map(w => generateCardHTML(w, true, 'db')).join('');
         } else {
             area.className = 'single-mode';
             if(dbCurrentIndex >= activeDbWords.length) dbCurrentIndex = 0;
             counter.textContent = `${dbCurrentIndex + 1} / ${activeDbWords.length}`;
             area.innerHTML = generateCardHTML(activeDbWords[dbCurrentIndex], false, 'db');
         }
+
+        window.updateDbBulkUI();
     };
 
     function generateCardHTML(w, isCompact, context = 'learn') {
         const prevFn = context === 'db' ? 'window.dbPrevCard' : 'window.prevCard';
         const nextFn = context === 'db' ? 'window.dbNextCard' : 'window.nextCard';
 
-        const controlsHTML = isCompact ? '' : `
+        const isBulk = context === 'db' && isDbBulkMode;
+        const isSelected = isBulk && selectedWordIds.has(w.id);
+        const selectedClass = isSelected ? 'card-bulk-selected' : '';
+
+        const controlsHTML = (isCompact || isBulk) ? '' : `
             <div class="card-actions-inline" onclick="event.stopPropagation()">
                 <button onclick="${prevFn}(event)" title="Előző">←</button>
                 <button onclick="flipThisCard(event, this)" title="Fordít">↻</button>
@@ -1128,17 +1516,30 @@
         const folderName = w.folderId ? window.getFolderName(w.folderId) : '';
         const folderTag = folderName ? `<span class="lang-tag" style="left: auto; right: 20px; background: rgba(99, 102, 241, 0.1); color: var(--primary);">📂 ${folderName}</span>` : '';
 
+        const clickHandler = isBulk 
+            ? `onclick="window.toggleSelectWord('${w.id}')"` 
+            : `onclick="flipThisCard(event, this)"`;
+
+        const bulkCheckboxHTML = isBulk ? `
+            <div class="bulk-check-badge" onclick="event.stopPropagation()">
+                <input type="checkbox" id="chk-word-${w.id}" ${isSelected ? 'checked' : ''} onchange="window.toggleSelectWord('${w.id}')" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary); margin: 0;">
+            </div>` : '';
+
+        const subtitleText = isBulk ? 'Kattints a kijelöléshez!' : 'Kattints a megfordításhoz!';
+
         return `
-            <div class="card-container" onclick="flipThisCard(event, this)">
+            <div class="card-container ${selectedClass}" id="card-container-${w.id}" ${clickHandler}>
                 <div class="card">
                     <div class="card-face card-front">
+                        ${bulkCheckboxHTML}
                         <span class="lang-tag">${w.lang}</span>
                         ${folderTag}
                         <h2>${w.word}</h2>
-                        <p style="font-size: ${isCompact ? '0.8rem' : '1rem'}; opacity: 0.7;">Kattints a megfordításhoz!</p>
+                        <p style="font-size: ${isCompact ? '0.8rem' : '1rem'}; opacity: 0.7;">${subtitleText}</p>
                         ${controlsHTML}
                     </div>
                     <div class="card-face card-back">
+                        ${bulkCheckboxHTML}
                         <div class="archive-pos-btn"><button class="btn-archive" onclick="window.markAsLearnedDirect('${w.id}', event)">📦 ${isCompact ? '' : 'Archivál'}</button></div>
                         <button class="edit-icon-btn" onclick="window.openEditModal('${w.id}', event)">✎</button>
                         <h3>${w.meaning}</h3>
@@ -1226,7 +1627,10 @@
         if(tab === 'test') window.initTest(); 
         if(tab === 'learn') window.filterAndRenderCards(); 
         if(tab === 'archive') window.renderArchive();
-        if(tab === 'database') window.renderDatabase();
+        if(tab === 'database') {
+            if (window.currentDatabaseFolderId) window.renderFolderWords();
+            else window.renderDatabase();
+        }
         if(tab === 'add') setTimeout(() => { const el = document.getElementById('inp-word'); if(el) el.focus(); }, 50);
     };
 
