@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lexicon Aura - High Score</title>
+    <title>Lexicon Aura v2</title>
     <style>
         /* --- TÉMÁK ÉS VÁLTOZÓK --- */
         :root {
@@ -72,9 +72,11 @@
         .auth-tab.active { background: var(--bg-card); color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
 
         /* --- APP CONTAINER --- */
-        #app-container { width: 100%; max-width: 800px; display: none; flex-direction: column; align-items: center; }
+        #app-container { width: 100%; max-width: 1100px; display: none; flex-direction: column; align-items: center; }
         #app-container.active { display: flex; animation: fadeIn 0.5s; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        #views-lexicon { width: 100%; display: flex; flex-direction: column; align-items: center; }
 
         header { width: 100%; max-width: 600px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; }
         h1 { font-size: 1.8rem; font-weight: 800; color: var(--primary); }
@@ -98,13 +100,20 @@
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
         /* KÁRTYÁK ÉS NÉZETEK */
-        #view-learn.active, #view-database.active, #view-archive.active, #view-spelling-database.active, #view-spelling-archive.active { width: 100%; max-width: 800px; } 
+        #view-learn.active, #view-database.active, #view-archive.active, #view-spelling-database.active, #view-spelling-archive.active { width: 100%; max-width: 1100px; } 
 
         .single-mode { display: flex; justify-content: center; width: 100%; }
         .single-mode .card-container { width: 100%; max-width: 500px; height: 380px; }
 
         .grid-mode { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; width: 100%; }
         .grid-mode .card-container { height: 240px; margin-bottom: 0; }
+
+        .learn-header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; width: 100%; max-width: 500px; margin-left: auto; margin-right: auto; transition: max-width 0.3s ease; }
+        #view-learn.grid-view-active .learn-header-bar,
+        #view-learn.grid-view-active #learn-search-container,
+        #database-folder-view.grid-view-active .learn-header-bar {
+            max-width: 100%;
+        }
 
         .card-container { perspective: 1200px; margin-bottom: 25px; cursor: pointer; }
         .card { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.7s; border-radius: var(--radius); box-shadow: var(--shadow); }
@@ -126,6 +135,51 @@
         .grid-mode .archive-pos-btn { top: 10px; left: 10px; }
         .lang-tag { position: absolute; top: 20px; left: 20px; font-size: 0.8rem; background: var(--bg-input); padding: 4px 8px; border-radius: 6px; color: var(--text-sub); }
         .grid-mode .lang-tag { top: 15px; left: 15px; }
+
+        @media (max-width: 640px) {
+            .grid-mode {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 12px;
+            }
+            .grid-mode .card-container {
+                height: 200px;
+            }
+            .grid-mode .card-face {
+                padding: 12px;
+                padding-bottom: 12px;
+            }
+            .grid-mode .card-front h2 {
+                font-size: 1.3rem;
+            }
+            .grid-mode .card-back h3 {
+                font-size: 1.1rem;
+                margin-bottom: 6px;
+            }
+            .grid-mode .card-back p {
+                font-size: 0.75rem;
+            }
+            .grid-mode .lang-tag {
+                top: 8px;
+                left: 8px;
+                font-size: 0.7rem;
+                padding: 2px 6px;
+            }
+            .grid-mode .edit-icon-btn {
+                width: 28px;
+                height: 28px;
+                font-size: 0.8rem;
+                top: 8px;
+                right: 8px;
+            }
+            .grid-mode .archive-pos-btn {
+                top: 8px;
+                left: 8px;
+            }
+            .grid-mode .btn-archive {
+                padding: 4px 8px;
+                font-size: 0.75rem;
+            }
+        }
 
         /* BEÉPÍTETT KÁRTYA GOMBOK */
         .card-actions-inline {
@@ -229,9 +283,9 @@
         <button onclick="switchSpellingTab('add')" id="tab-spelling-add">Új Pár</button>
     </nav>
 
-    <div id="views-lexicon">
+    <div id="views-lexicon" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
         <section id="view-learn" class="view-section active">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; max-width: 500px; margin-left: auto; margin-right: auto;">
+            <div class="learn-header-bar">
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <select id="learn-lang-select" onchange="filterAndRenderCards()" style="width: auto; margin:0; padding: 8px 16px;"></select>
                     <button id="btn-toggle-search" class="icon-btn" style="display: none; padding: 8px 12px; margin: 0; font-size: 1rem;" onclick="toggleLearnSearch()" title="Kereső megjelenítése/elrejtése">🔍</button>
@@ -250,7 +304,7 @@
 
         <section id="view-database" class="view-section">
             <div id="database-root">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center; max-width: 500px; margin-left: auto; margin-right: auto;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center; width: 100%; margin-left: auto; margin-right: auto;">
                     <h2 style="color: var(--primary); font-size: 1.5rem;">Mappák</h2>
                     <button class="btn-primary" style="width: auto; padding: 8px 16px;" onclick="window.createFolder()">+ Új mappa</button>
                 </div>
@@ -258,12 +312,12 @@
             </div>
 
             <div id="database-folder-view" style="display: none;">
-                <div style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center; max-width: 500px; margin-left: auto; margin-right: auto;">
+                <div style="display: flex; gap: 10px; margin-bottom: 20px; align-items: center; width: 100%; margin-left: auto; margin-right: auto;">
                     <button class="btn-secondary" style="width: auto; padding: 8px 16px;" onclick="window.closeFolderView()">⬅ Vissza</button>
                     <h2 id="current-folder-name" style="flex:1; text-align:right; font-size: 1.3rem; color: var(--primary);">Mappa</h2>
                 </div>
                 
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; max-width: 500px; margin-left: auto; margin-right: auto;">
+                <div class="learn-header-bar">
                     <select id="db-lang-select" onchange="window.renderFolderWords()" style="width: auto; margin:0; padding: 8px 16px;"></select>
                     <span id="db-card-counter" style="color: var(--text-sub); font-weight: 600;">0 / 0</span>
                 </div>
@@ -288,7 +342,7 @@
         </section>
 
         <section id="view-archive" class="view-section">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; max-width: 500px; margin-left: auto; margin-right: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; width: 100%; margin-left: auto; margin-right: auto;">
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <select id="archive-lang-select" onchange="renderArchive()" style="width: auto; margin:0; padding: 8px 16px;"></select>
                     <button class="btn-primary" onclick="window.startArchiveTest()" style="width: auto; padding: 8px 16px; font-size: 0.9rem;">Teszt</button>
@@ -593,7 +647,7 @@
         if (mode === 'lexicon') {
             document.getElementById('nav-lexicon').style.display = 'flex';
             document.getElementById('nav-spelling').style.display = 'none';
-            document.getElementById('views-lexicon').style.display = 'block';
+            document.getElementById('views-lexicon').style.display = 'flex';
             document.getElementById('views-spelling').style.display = 'none';
             window.switchTab('learn');
         } else {
@@ -1139,6 +1193,8 @@
         const searchBtn = document.getElementById('btn-toggle-search');
         const searchInputEl = document.getElementById('learn-search-input');
         const searchInput = searchInputEl ? searchInputEl.value.toLowerCase() : '';
+        const viewLearnEl = document.getElementById('view-learn');
+        if (viewLearnEl) viewLearnEl.classList.toggle('grid-view-active', isLearnGridView);
         if (!area || !counter) return;
         if (isLearnGridView && activeWords.length > 0) {
             if(searchBtn) searchBtn.style.display = 'flex';
@@ -1188,6 +1244,8 @@
         
         const area = document.getElementById('db-flashcard-area');
         const counter = document.getElementById('db-card-counter');
+        const viewDbEl = document.getElementById('database-folder-view');
+        if (viewDbEl) viewDbEl.classList.toggle('grid-view-active', isLearnGridView);
         
         if(!activeDbWords.length) {
             area.innerHTML = `<div class="test-card"><p>Nincs aktív tanulnivaló a mappában ezen a nyelven.</p></div>`;
