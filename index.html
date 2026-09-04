@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lexicon Aura v2</title>
+    <title>Lexicon Aura v3</title>
     <style>
         /* --- TÉMÁK ÉS VÁLTOZÓK --- */
         :root {
@@ -100,7 +100,7 @@
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
         /* KÁRTYÁK ÉS NÉZETEK */
-        #view-learn.active, #view-database.active, #view-archive.active, #view-spelling-database.active, #view-spelling-archive.active { width: 100%; max-width: 1100px; } 
+        #view-learn.active, #view-database.active, #view-archive.active { width: 100%; max-width: 1100px; } 
 
         .single-mode { display: flex; justify-content: center; width: 100%; }
         .single-mode .card-container { width: 100%; max-width: 500px; height: 380px; }
@@ -194,7 +194,7 @@
         .card-actions-inline button:hover { color: var(--primary); transform: scale(1.15); }
         .card-actions-inline button:active { transform: scale(0.95); }
 
-        /* TEST & SPELLING MODE */
+        /* TEST MODE */
         .test-card { background: var(--bg-card); padding: 30px; border-radius: var(--radius); text-align: center; border: 1px solid var(--border); width: 100%; max-width: 500px; margin: 0 auto; position: relative; }
         .dynamic-display { font-family: monospace; font-size: 1.6rem; letter-spacing: 2px; margin: 25px 0; min-height: 40px; word-wrap: break-word; }
         .char-correct { color: var(--success); font-weight: bold; border-bottom: 2px solid var(--success); }
@@ -202,11 +202,6 @@
         .char-placeholder { color: var(--border); }
         .char-hint { opacity: 0.5; }
         .test-controls { display: flex; gap: 10px; justify-content: center; margin-bottom: 15px; flex-wrap: wrap; }
-        
-        .spelling-card { padding: 30px; flex: 1; border-radius: var(--radius); cursor: pointer; border: 2px solid var(--border); box-shadow: var(--shadow); background: var(--bg-card); display: flex; justify-content: center; align-items: center; min-height: 200px; }
-        .spelling-card:hover { border-color: var(--primary); transform: translateY(-5px); }
-        .spelling-card.correct { border-color: var(--success); background: rgba(16, 185, 129, 0.1); }
-        .spelling-card.wrong { border-color: var(--error); background: rgba(239, 68, 68, 0.1); }
 
         /* MODAL */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 100; }
@@ -261,26 +256,12 @@
         </div>
     </div>
 
-    <div style="display:flex; justify-content:center; margin-bottom: 15px; width: 100%; max-width: 600px;">
-        <div class="auth-tabs" style="width: 100%; margin-bottom: 0;">
-            <button class="auth-tab active" onclick="setAppMode('lexicon')" id="mode-lexicon">Szótár</button>
-            <button class="auth-tab" onclick="setAppMode('spelling')" id="mode-spelling">Helyesírás</button>
-        </div>
-    </div>
-
     <nav id="nav-lexicon">
         <button onclick="switchTab('learn')" id="tab-learn" class="active">Tanulás</button>
         <button onclick="switchTab('database')" id="tab-database">Adatbázis</button>
         <button onclick="switchTab('test')" id="tab-test">Teszt</button>
         <button onclick="switchTab('archive')" id="tab-archive">Archívum</button>
         <button onclick="switchTab('add')" id="tab-add">Új szó</button>
-    </nav>
-
-    <nav id="nav-spelling" style="display: none;">
-        <button onclick="switchSpellingTab('practice')" id="tab-spelling-practice" class="active">Gyakorlás</button>
-        <button onclick="switchSpellingTab('database')" id="tab-spelling-database">Adatbázis</button>
-        <button onclick="switchSpellingTab('archive')" id="tab-spelling-archive">Archívum</button>
-        <button onclick="switchSpellingTab('add')" id="tab-spelling-add">Új Pár</button>
     </nav>
 
     <div id="views-lexicon" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
@@ -389,64 +370,6 @@
                 </div>
             </div>
         </section>
-    </div>
-
-    <div id="views-spelling" style="display: none; width: 100%; display: flex; flex-direction: column; align-items: center;">
-        
-        <section id="view-spelling-practice" class="view-section">
-            <div class="test-card" id="spelling-game-area">
-                <p style="margin-bottom:20px; color:var(--text-sub); font-weight: bold;">Melyik a helyesen leírt szó?</p>
-                <div id="spelling-streak-badge" style="margin-bottom: 15px; font-size: 0.85rem; color: var(--text-sub);"></div>
-                
-                <div style="display:flex; width:100%; gap:15px; justify-content:center;" id="spelling-swipe-container">
-                    <div id="spelling-left" class="spelling-card" onclick="window.chooseSpelling(true)">
-                        <h2 id="spelling-left-text" style="font-size:1.8rem; word-break:break-all;"></h2>
-                    </div>
-                    <div id="spelling-right" class="spelling-card" onclick="window.chooseSpelling(false)">
-                        <h2 id="spelling-right-text" style="font-size:1.8rem; word-break:break-all;"></h2>
-                    </div>
-                </div>
-                <div id="spelling-feedback" style="margin-top:20px; font-weight:bold; height:24px;"></div>
-                <button class="btn-secondary hidden" id="spelling-next-btn" onclick="window.nextSpelling()" style="margin-top: 15px;">Tovább</button>
-            </div>
-        </section>
-
-        <section id="view-spelling-database" class="view-section">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; max-width: 500px; margin-left: auto; margin-right: auto;">
-                <h2 style="color: var(--primary); font-size: 1.5rem;">Helyesírási Szavak</h2>
-                <span id="spelling-db-counter" style="color: var(--text-sub); font-weight: 600;">0</span>
-            </div>
-            <div id="spelling-db-area" class="grid-mode"></div>
-        </section>
-
-        <section id="view-spelling-archive" class="view-section">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; max-width: 500px; margin-left: auto; margin-right: auto;">
-                <h2 style="color: var(--success); font-size: 1.5rem;">Archivált Szavak</h2>
-                <span id="spelling-archive-counter" style="color: var(--text-sub); font-weight: 600;">0</span>
-            </div>
-            <div id="spelling-archive-area" class="grid-mode"></div>
-        </section>
-
-        <section id="view-spelling-add" class="view-section">
-            <div style="background: var(--bg-card); padding: 25px; border-radius: var(--radius); border: 1px solid var(--border); max-width: 500px; margin: 0 auto;">
-                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                    <button class="btn-secondary" style="width:auto; flex:1;" onclick="document.getElementById('spelling-add-single').classList.remove('hidden'); document.getElementById('spelling-add-bulk').classList.add('hidden');">Egyesével</button>
-                    <button class="btn-secondary" style="width:auto; flex:1;" onclick="document.getElementById('spelling-add-single').classList.add('hidden'); document.getElementById('spelling-add-bulk').classList.remove('hidden');">Tömeges</button>
-                </div>
-
-                <div id="spelling-add-single" style="width: 100%;">
-                    <input type="text" id="spelling-inp-correct" placeholder="Helyes szó (pl. muszáj)">
-                    <input type="text" id="spelling-inp-incorrect" placeholder="Helytelen forma (pl. muszály)">
-                    <button class="btn-primary" onclick="window.addSpellingWord()">Mentés</button>
-                </div>
-                <div id="spelling-add-bulk" class="hidden">
-                    <p style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 10px;">Formátum: Helyes - Helytelen</p>
-                    <textarea id="spelling-inp-bulk" rows="6" placeholder="muszáj - muszály&#10;egyelőre - egyenlőre"></textarea>
-                    <button class="btn-primary" onclick="window.addSpellingBulk()">Tömeges Mentés</button>
-                </div>
-            </div>
-        </section>
-        
     </div>
 
 </div>
@@ -582,7 +505,6 @@
 
     let currentUser = null;
     let authMode = 'login';
-    let currentAppMode = 'lexicon'; // 'lexicon' or 'spelling'
     
     // Lexicon arrays
     let allWords = [];
@@ -597,14 +519,6 @@
     let testIndex = 0;
     let revealedHints = [];
     let hintCountForCurrentWord = 0;
-
-    // Spelling arrays
-    let allSpellingWords = [];
-    let activeSpellingWords = [];
-    let archivedSpellingWords = [];
-    let spellingCurrentIndex = 0;
-    let isSpellingLeftCorrect = true;
-    let currentSpellingItem = null;
 
     let userPoints = 0;
     let userStreak = 0;
@@ -637,41 +551,6 @@
         localStorage.setItem('auto_restore_enabled', window.autoRestoreEnabled);
         localStorage.setItem('auto_restore_days', window.autoRestoreDays);
     };
-
-    // --- APP MODE SWITCHER ---
-    window.setAppMode = (mode) => {
-        currentAppMode = mode;
-        document.getElementById('mode-lexicon').className = mode === 'lexicon' ? 'auth-tab active' : 'auth-tab';
-        document.getElementById('mode-spelling').className = mode === 'spelling' ? 'auth-tab active' : 'auth-tab';
-        
-        if (mode === 'lexicon') {
-            document.getElementById('nav-lexicon').style.display = 'flex';
-            document.getElementById('nav-spelling').style.display = 'none';
-            document.getElementById('views-lexicon').style.display = 'flex';
-            document.getElementById('views-spelling').style.display = 'none';
-            window.switchTab('learn');
-        } else {
-            document.getElementById('nav-lexicon').style.display = 'none';
-            document.getElementById('nav-spelling').style.display = 'flex';
-            document.getElementById('views-lexicon').style.display = 'none';
-            document.getElementById('views-spelling').style.display = 'flex';
-            window.switchSpellingTab('practice');
-        }
-    };
-
-    window.switchSpellingTab = (tab) => {
-        const views = document.getElementById('views-spelling').querySelectorAll('.view-section');
-        views.forEach(e => e.classList.remove('active'));
-        document.getElementById('nav-spelling').querySelectorAll('button').forEach(e => e.classList.remove('active'));
-        
-        document.getElementById(`view-spelling-${tab}`).classList.add('active');
-        document.getElementById(`tab-spelling-${tab}`).classList.add('active');
-        
-        if(tab === 'practice') window.renderSpellingPractice();
-        if(tab === 'database') window.renderSpellingDatabase();
-        if(tab === 'archive') window.renderSpellingArchive();
-    };
-
 
     window.toggleTestDirection = () => {
         window.testModeReverse = !window.testModeReverse;
@@ -714,8 +593,7 @@
             document.body.style.justifyContent = 'flex-start';
             loadStats();
             fetchWords();
-            fetchSpellingWords();
-            setAppMode('lexicon');
+            window.switchTab('learn');
         } else {
             currentUser = null;
             document.getElementById('auth-container').classList.add('active');
@@ -793,36 +671,6 @@
             if(document.getElementById('view-test').classList.contains('active')) window.initTest();
         } catch (e) { console.error(e); }
     }
-
-    async function fetchSpellingWords() {
-        if(!currentUser) return;
-        try {
-            const sq = query(collection(db, "spelling_words"), where("uid", "==", currentUser.uid));
-            const querySnapshot = await getDocs(sq);
-            allSpellingWords = [];
-            querySnapshot.forEach((doc) => allSpellingWords.push({ id: doc.id, ...doc.data() }));
-            
-            const now = Date.now();
-            if (window.autoRestoreEnabled) {
-                allSpellingWords.forEach(w => {
-                    if (w.learned && w.archivedAt && !w.permanent) {
-                        const msInDay = 1000 * 60 * 60 * 24;
-                        const daysPassed = Math.floor((now - w.archivedAt) / msInDay);
-                        const targetDays = w.archiveDays || window.autoRestoreDays;
-                        if (daysPassed >= targetDays) {
-                            w.learned = false;
-                            w.perfectStreak = 0;
-                            updateDoc(doc(db, "spelling_words", w.id), { learned: false, perfectStreak: 0 });
-                        }
-                    }
-                });
-            }
-            allSpellingWords.sort((a, b) => b.createdAt - a.createdAt);
-            
-            if(currentAppMode === 'spelling') window.renderSpellingPractice();
-        } catch (e) { console.error(e); }
-    }
-
 
     // --- LEXICON LOGIC ---
     window.updateFolderSelects = () => {
@@ -1505,7 +1353,7 @@
             </div>
             <h2 style="font-size:2rem; margin-bottom:15px;">${displayWord}</h2>
             <div class="test-controls">
-                <button class="btn-secondary" style="font-size:0.8rem; width:auto;" onclick="window.triggerHint()" id="btn-hint">💡 Súgás</button>
+                <button class="btn-secondary" style="font-size:0.8rem; width:auto;" onclick="window.triggerHint()" id="btn-hint" title="Javaslat / Súgás">💡 Javaslat</button>
                 <button class="btn-danger" style="font-size:0.8rem; width:auto;" onclick="window.giveUp()" id="btn-giveup">Megoldás</button>
             </div>
             <div id="dynamic-display" class="dynamic-display"></div>
@@ -1523,22 +1371,94 @@
         window.updateVisuals();
     };
 
+    function getUnfilledIndices() {
+        const inputEl = document.getElementById('test-input');
+        const inputVal = inputEl ? inputEl.value : '';
+        const fullTarget = window.testModeReverse ? testList[testIndex].word : testList[testIndex].meaning;
+        const userParts = inputVal.split(',').map(p => p.trim());
+        const targetParts = fullTarget.split(',');
+        const targetMap = new Array(targetParts.length).fill(null);
+
+        userParts.forEach(uPart => {
+            if(!uPart) return;
+            let bestMatchIdx = -1, maxMatchLen = -1;
+            for (let i = 0; i < targetParts.length; i++) {
+                if (targetMap[i] !== null) continue;
+                const tLower = targetParts[i].trim().toLowerCase();
+                const uLower = uPart.toLowerCase();
+                let matchLen = 0;
+                while(matchLen < uLower.length && matchLen < tLower.length && uLower[matchLen] === tLower[matchLen]) matchLen++;
+                if (matchLen > maxMatchLen) { maxMatchLen = matchLen; bestMatchIdx = i; }
+            }
+            if (bestMatchIdx !== -1) {
+                targetMap[bestMatchIdx] = uPart;
+            }
+        });
+
+        let currentTargetIdx = 0, charInUserText = 0;
+        const unfilled = [];
+
+        for(let i = 0; i < fullTarget.length; i++) {
+            const char = fullTarget[i];
+            if(char === ',') { 
+                currentTargetIdx++; 
+                charInUserText = 0; 
+                continue; 
+            }
+            if(char === ' ' && charInUserText === 0 && currentTargetIdx > 0) { 
+                continue; 
+            }
+            if(char === ' ') { 
+                charInUserText++; 
+                continue; 
+            }
+
+            const uText = targetMap[currentTargetIdx];
+            let isCorrect = false;
+            if(uText && charInUserText < uText.length) {
+                const uChar = uText[charInUserText];
+                if (uChar.toLowerCase() === char.toLowerCase()) {
+                    isCorrect = true;
+                }
+                charInUserText++;
+            }
+
+            if (!isCorrect && !revealedHints.includes(i)) {
+                unfilled.push(i);
+            }
+        }
+        return unfilled;
+    }
+
     window.triggerHint = () => {
         if (hintCountForCurrentWord >= 3) { if(!confirm("A 4. hint nullázza a streak-et. Biztosan?")) return; userStreak = 0; saveStats(); }
         hintCountForCurrentWord++;
         window.currentTestErrorCount = 99; 
 
-        const t = window.testModeReverse ? testList[testIndex].word : testList[testIndex].meaning;
-        if(revealedHints.length === 0) {
-            revealedHints.push(0, t.length-1);
-            for(let i=0; i<t.length; i++) if(t[i] === ' ' || t[i] === ',') revealedHints.push(i);
+        const fullTarget = window.testModeReverse ? testList[testIndex].word : testList[testIndex].meaning;
+        for(let i = 0; i < fullTarget.length; i++) {
+            if((fullTarget[i] === ' ' || fullTarget[i] === ',') && !revealedHints.includes(i)) {
+                revealedHints.push(i);
+            }
+        }
+
+        const unfilled = getUnfilledIndices();
+        if(unfilled.length > 0) {
+            revealedHints.push(unfilled[0]);
         } else {
-            const unrevealed = [];
-            for(let i=0; i<t.length; i++) if(!revealedHints.includes(i) && t[i]!==' ' && t[i]!==',') unrevealed.push(i);
-            if(unrevealed.length > 0) revealedHints.push(unrevealed[Math.floor(Math.random()*unrevealed.length)]);
+            const anyUnrevealed = [];
+            for(let i = 0; i < fullTarget.length; i++) {
+                if(!revealedHints.includes(i) && fullTarget[i] !== ' ' && fullTarget[i] !== ',') {
+                    anyUnrevealed.push(i);
+                }
+            }
+            if(anyUnrevealed.length > 0) {
+                revealedHints.push(anyUnrevealed[0]);
+            }
         }
         window.updateVisuals();
-        document.getElementById('test-input').focus();
+        const inputEl = document.getElementById('test-input');
+        if(inputEl) inputEl.focus();
     };
 
     window.giveUp = () => {
@@ -1612,7 +1532,7 @@
                 const uChar = uText[charInUserText];
                 const isMatch = uChar.toLowerCase() === char.toLowerCase();
                 if (!isMatch) tempErrorsFound++;
-                displayHTML = `<span class="${isMatch ? 'char-correct' : 'char-wrong'}">${uChar === ' ' ? '&nbsp;' : uChar}</span>`;
+                displayHTML = `<span class="${isMatch ? 'char-correct' : (revealedHints.includes(i) ? 'char-hint' : 'char-wrong')}">${isMatch ? (uChar === ' ' ? '&nbsp;' : uChar) : (revealedHints.includes(i) ? char : (uChar === ' ' ? '&nbsp;' : uChar))}</span>`;
                 charInUserText++;
             }
 
@@ -1749,254 +1669,6 @@
     };
 
     window.nextTestItem = () => { testIndex++; window.renderTest(); };
-
-
-    // --- SPELLING LOGIC ---
-    window.addSpellingWord = async () => {
-        const correct = document.getElementById('spelling-inp-correct').value.trim();
-        const incorrect = document.getElementById('spelling-inp-incorrect').value.trim();
-        if(!correct || !incorrect) return alert('Kérlek töltsd ki mindkét mezőt!');
-        
-        try {
-            const newDoc = { uid: currentUser.uid, correct, incorrect, learned: false, perfectStreak: 0, createdAt: Date.now() };
-            const docRef = await addDoc(collection(db, "spelling_words"), newDoc);
-            allSpellingWords.unshift({ id: docRef.id, ...newDoc });
-            document.getElementById('spelling-inp-correct').value = ''; 
-            document.getElementById('spelling-inp-incorrect').value = '';
-            alert("Mentve!");
-            document.getElementById('spelling-inp-correct').focus();
-        } catch (e) { alert("Hiba: " + e.message); }
-    };
-
-    window.addSpellingBulk = async () => {
-        const text = document.getElementById('spelling-inp-bulk').value;
-        if(!text) return;
-        const batch = writeBatch(db);
-        const lines = text.split('\n');
-        let count = 0;
-        
-        lines.forEach(line => {
-            const dashIndex = line.indexOf('-');
-            if(dashIndex !== -1) {
-                const c = line.substring(0, dashIndex).trim();
-                const i = line.substring(dashIndex + 1).trim();
-                
-                if (c && i) {
-                    const docRef = doc(collection(db, "spelling_words"));
-                    const data = { uid: currentUser.uid, correct: c, incorrect: i, learned: false, perfectStreak: 0, createdAt: Date.now() };
-                    batch.set(docRef, data);
-                    allSpellingWords.unshift({ id: docRef.id, ...data });
-                    count++;
-                }
-            }
-        });
-        
-        if(count > 0) { 
-            await batch.commit(); 
-            document.getElementById('spelling-inp-bulk').value = ''; 
-            alert(`Sikeresen importálva ${count} szópár!`); 
-        }
-    };
-
-    window.renderSpellingPractice = () => {
-        activeSpellingWords = allSpellingWords.filter(w => !w.learned);
-        const area = document.getElementById('spelling-game-area');
-        
-        document.getElementById('spelling-left').classList.remove('correct', 'wrong');
-        document.getElementById('spelling-right').classList.remove('correct', 'wrong');
-        document.getElementById('spelling-left').style.pointerEvents = 'auto';
-        document.getElementById('spelling-right').style.pointerEvents = 'auto';
-        document.getElementById('spelling-feedback').innerHTML = '';
-        document.getElementById('spelling-next-btn').classList.add('hidden');
-
-        if(!activeSpellingWords.length) {
-            document.getElementById('spelling-swipe-container').style.display = 'none';
-            document.getElementById('spelling-streak-badge').innerHTML = '';
-            area.querySelector('p').textContent = 'Jelenleg nincs aktív gyakorolnivaló szópár.';
-            return;
-        }
-
-        document.getElementById('spelling-swipe-container').style.display = 'flex';
-        area.querySelector('p').textContent = 'Melyik a helyesen leírt szó?';
-        
-        activeSpellingWords.sort(() => Math.random() - 0.5);
-        currentSpellingItem = activeSpellingWords[0];
-        isSpellingLeftCorrect = Math.random() > 0.5;
-
-        document.getElementById('spelling-left-text').textContent = isSpellingLeftCorrect ? currentSpellingItem.correct : currentSpellingItem.incorrect;
-        document.getElementById('spelling-right-text').textContent = isSpellingLeftCorrect ? currentSpellingItem.incorrect : currentSpellingItem.correct;
-
-        if (window.autoArchiveEnabled) {
-            document.getElementById('spelling-streak-badge').innerHTML = `🎯 ${currentSpellingItem.perfectStreak || 0} / ${window.autoArchiveThreshold}`;
-        } else {
-            document.getElementById('spelling-streak-badge').innerHTML = '';
-        }
-    };
-
-    window.chooseSpelling = (choseLeft) => {
-        if (!currentSpellingItem) return;
-
-        const isCorrect = choseLeft === isSpellingLeftCorrect;
-        const leftCard = document.getElementById('spelling-left');
-        const rightCard = document.getElementById('spelling-right');
-        const feedback = document.getElementById('spelling-feedback');
-        
-        leftCard.style.pointerEvents = 'none';
-        rightCard.style.pointerEvents = 'none';
-        document.getElementById('spelling-next-btn').classList.remove('hidden');
-
-        if (choseLeft) leftCard.classList.add(isCorrect ? 'correct' : 'wrong');
-        else rightCard.classList.add(isCorrect ? 'correct' : 'wrong');
-        
-        if (!isCorrect) {
-            if (choseLeft) rightCard.classList.add('correct');
-            else leftCard.classList.add('correct');
-        }
-
-        let newStreak = 0;
-
-        if (isCorrect) {
-            userPoints += 20;
-            saveStats();
-            newStreak = (currentSpellingItem.perfectStreak || 0) + 1;
-            
-            if (window.autoArchiveEnabled && newStreak >= window.autoArchiveThreshold) {
-                feedback.style.color = 'var(--success)';
-                feedback.innerHTML = `Helyes! 🎉 Archiválva!`;
-                
-                const wIdx = allSpellingWords.findIndex(w => w.id === currentSpellingItem.id);
-                if (wIdx > -1) {
-                    allSpellingWords[wIdx].learned = true;
-                    allSpellingWords[wIdx].archivedAt = Date.now();
-                    allSpellingWords[wIdx].perfectStreak = 0;
-                    allSpellingWords[wIdx].archiveDays = window.autoRestoreDays;
-                }
-                updateDoc(doc(db, "spelling_words", currentSpellingItem.id), { learned: true, archivedAt: Date.now(), perfectStreak: 0, archiveDays: window.autoRestoreDays });
-            } else {
-                feedback.style.color = 'var(--success)';
-                feedback.innerHTML = `Helyes! +20 Pont`;
-                const wIdx = allSpellingWords.findIndex(w => w.id === currentSpellingItem.id);
-                if (wIdx > -1) allSpellingWords[wIdx].perfectStreak = newStreak;
-                updateDoc(doc(db, "spelling_words", currentSpellingItem.id), { perfectStreak: newStreak });
-            }
-        } else {
-            feedback.style.color = 'var(--error)';
-            feedback.innerHTML = `Helytelen! A helyes: ${currentSpellingItem.correct}`;
-            const wIdx = allSpellingWords.findIndex(w => w.id === currentSpellingItem.id);
-            if (wIdx > -1) allSpellingWords[wIdx].perfectStreak = 0;
-            updateDoc(doc(db, "spelling_words", currentSpellingItem.id), { perfectStreak: 0 });
-        }
-    };
-
-    window.nextSpelling = () => {
-        window.renderSpellingPractice();
-    };
-
-    window.renderSpellingDatabase = () => {
-        const dbWords = allSpellingWords.filter(w => !w.learned);
-        document.getElementById('spelling-db-counter').textContent = `Összes: ${dbWords.length}`;
-        const area = document.getElementById('spelling-db-area');
-        
-        if(!dbWords.length) {
-            area.innerHTML = `<div class="test-card" style="grid-column: 1 / -1;"><p>Nincsenek aktív szavak az adatbázisban.</p></div>`;
-            return;
-        }
-
-        area.innerHTML = dbWords.map(w => `
-            <div class="card-container" style="height: 140px;">
-                <div class="card">
-                    <div class="card-face card-front" style="padding: 20px; align-items: flex-start; justify-content: center; border: 2px solid var(--border);">
-                        <h3 style="color:var(--success); font-size: 1.2rem; margin-bottom: 5px;">✅ ${w.correct}</h3>
-                        <h3 style="color:var(--error); font-size: 1.1rem; text-decoration: line-through;">❌ ${w.incorrect}</h3>
-                        <button onclick="window.deleteSpellingWord('${w.id}', event)" style="position:absolute; top:15px; right:15px; background:var(--bg-body); border:1px solid var(--border); border-radius:50%; width:30px; height:30px; color:var(--error); font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">🗑</button>
-                    </div>
-                </div>
-            </div>`).join('');
-    };
-
-    window.deleteSpellingWord = async (id, e) => {
-        if(e) e.stopPropagation();
-        if(!confirm("Biztosan törlöd ezt a szópárt?")) return;
-        try {
-            await deleteDoc(doc(db, "spelling_words", id));
-            allSpellingWords = allSpellingWords.filter(w => w.id !== id);
-            window.renderSpellingDatabase();
-        } catch(err) { console.error(err); }
-    };
-
-    window.renderSpellingArchive = () => {
-        archivedSpellingWords = allSpellingWords.filter(w => w.learned);
-        document.getElementById('spelling-archive-counter').textContent = `Archivált: ${archivedSpellingWords.length}`;
-        const area = document.getElementById('spelling-archive-area');
-        
-        if(!archivedSpellingWords.length) {
-            area.innerHTML = `<div class="test-card" style="grid-column: 1 / -1;"><p>Még nincs archivált helyesírási szó.</p></div>`;
-            return;
-        }
-
-        area.innerHTML = archivedSpellingWords.map(w => {
-            let restoreInfo = '';
-            if (window.autoRestoreEnabled && w.archivedAt) {
-                const msInDay = 1000 * 60 * 60 * 24;
-                const targetDays = w.archiveDays || window.autoRestoreDays;
-                const daysLeft = Math.ceil((w.archivedAt + targetDays * msInDay - Date.now()) / msInDay);
-                const displayDays = daysLeft > 0 ? daysLeft : 0;
-                restoreInfo = `<div style="margin-top: 10px; font-size: 0.85rem; color: var(--text-sub);">⏳ Újraaktíválódik:<br><strong style="color:var(--primary)">${displayDays} nap</strong> múlva</div>`;
-            }
-
-            return `
-            <div class="card-container" style="height: 180px;">
-                <div class="card">
-                    <div class="card-face card-front" style="padding: 20px; align-items: flex-start; justify-content: center; border: 2px solid var(--success);">
-                        <span style="position:absolute; top:15px; left:15px; font-size: 0.75rem; color:var(--success); font-weight:bold;">Archivált</span>
-                        <h3 style="color:var(--text-main); font-size: 1.4rem; margin-top:15px; margin-bottom: 5px;">${w.correct}</h3>
-                        ${restoreInfo}
-                        <button onclick="window.restoreSpellingWord('${w.id}', event)" class="btn-secondary" style="position:absolute; bottom:15px; left:15px; right:15px; width:auto; padding: 6px; font-size:0.85rem;">Visszaállít ↺</button>
-                    </div>
-                </div>
-            </div>`;
-        }).join('');
-    };
-
-    window.restoreSpellingWord = async (id, e) => {
-        if(e) e.stopPropagation();
-        const w = allSpellingWords.find(i => i.id === id);
-        if(!w) return;
-        w.learned = false; w.perfectStreak = 0;
-        window.renderSpellingArchive();
-        try { await updateDoc(doc(db, "spelling_words", id), { learned: false, perfectStreak: 0 }); } catch(err){console.error(err);}
-    };
-
-    // Swipe Event Listeners (Touch)
-    let touchstartX = 0;
-    let touchendX = 0;
-    const swipeZone = document.getElementById('spelling-swipe-container');
-    
-    if (swipeZone) {
-        swipeZone.addEventListener('touchstart', e => {
-            touchstartX = e.changedTouches[0].screenX;
-        }, {passive: true});
-
-        swipeZone.addEventListener('touchend', e => {
-            touchendX = e.changedTouches[0].screenX;
-            handleSwipe();
-        }, {passive: true});
-    }
-
-    function handleSwipe() {
-        if (!currentSpellingItem) return;
-        if (document.getElementById('spelling-left').style.pointerEvents === 'none') return; // Ha már választottunk
-        
-        const swipeThreshold = 50;
-        if (touchendX < touchstartX - swipeThreshold) {
-            // Balra húzás (Kiválasztja a bal oldalit)
-            window.chooseSpelling(true);
-        }
-        if (touchendX > touchstartX + swipeThreshold) {
-            // Jobbra húzás (Kiválasztja a jobb oldalit)
-            window.chooseSpelling(false);
-        }
-    }
 
 </script>
 </body>
