@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lexicon Aura v5</title>
+    <title>Lexicon Aura v6</title>
     <style>
         /* --- TÉMÁK ÉS VÁLTOZÓK --- */
         :root {
@@ -1181,6 +1181,20 @@
         const m = document.getElementById('inp-meaning').value.trim();
         const s = document.getElementById('inp-sentence').value.trim();
         if(!lang || !w || !m) return alert('Töltsd ki az adatokat!');
+
+        const targetWordLower = w.toLowerCase();
+        const existingWord = allWords.find(item => 
+            item.word.trim().toLowerCase() === targetWordLower && 
+            item.lang.trim().toLowerCase() === lang.toLowerCase()
+        ) || allWords.find(item => item.word.trim().toLowerCase() === targetWordLower);
+
+        if (existingWord) {
+            const folderName = existingWord.folderId ? window.getFolderName(existingWord.folderId) : 'Tanulás';
+            alert(`A(z) "${existingWord.word}" szó már szerepel az adatbázisban (${existingWord.lang} - Mappa: ${folderName})!\n\nMegnyitás a szerkesztőben...`);
+            window.openEditModal(existingWord.id);
+            return;
+        }
+
         try {
             const newDoc = { uid: currentUser.uid, lang, folderId, word: w, meaning: m, sentence: s, learned: false, perfectStreak: 0, permanent: false, createdAt: Date.now() };
             const docRef = await addDoc(collection(db, "words"), newDoc);
@@ -1206,7 +1220,18 @@
         const batch = writeBatch(db);
         const lines = text.split('\n');
         let count = 0;
-        
+        const skippedDuplicates = [];
+        let singleDuplicateId = null;
+
+        const existingWordMap = new Map();
+        allWords.forEach(item => {
+            const key = item.word.trim().toLowerCase();
+            if (!existingWordMap.has(key)) {
+                existingWordMap.set(key, item);
+            }
+        });
+        const currentBatchWords = new Set();
+
         lines.forEach(line => {
             const dashIndex = line.indexOf('-');
             if(dashIndex !== -1) {
@@ -1224,10 +1249,20 @@
                 }
                 
                 if (w && m) {
+                    const wLower = w.toLowerCase();
+                    if (existingWordMap.has(wLower) || currentBatchWords.has(wLower)) {
+                        skippedDuplicates.push(w);
+                        const existingItem = existingWordMap.get(wLower);
+                        if (existingItem) singleDuplicateId = existingItem.id;
+                        return;
+                    }
+
+                    currentBatchWords.add(wLower);
                     const docRef = doc(collection(db, "words"));
                     const data = { uid: currentUser.uid, lang, folderId, word: w, meaning: m, sentence: s, learned: false, perfectStreak: 0, permanent: false, createdAt: Date.now() };
                     batch.set(docRef, data);
                     allWords.unshift({ id: docRef.id, ...data });
+                    existingWordMap.set(wLower, { id: docRef.id, ...data });
                     count++;
                 }
             }
@@ -1241,16 +1276,43 @@
             window.filterAndRenderCards(); 
             if(window.currentDatabaseFolderId) window.renderFolderWords();
             window.renderDatabase();
-            alert(`Sikeresen importálva ${count} szó!`); 
+            if (skippedDuplicates.length > 0) {
+                alert(`Sikeresen importálva ${count} szó!\n\nKihagyott ismétlődő szavak (${skippedDuplicates.length} db): ${skippedDuplicates.slice(0, 10).join(', ')}${skippedDuplicates.length > 10 ? '...' : ''}`);
+            } else {
+                alert(`Sikeresen importálva ${count} szó!`); 
+            }
+        } else if (skippedDuplicates.length > 0) {
+            if (skippedDuplicates.length === 1 && singleDuplicateId) {
+                alert(`A(z) "${skippedDuplicates[0]}" szó már szerepel az adatbázisban!\nMegnyitás a szerkesztőben...`);
+                window.openEditModal(singleDuplicateId);
+            } else {
+                alert(`Nem került új szó mentésre. A megadott szavak mindegyike már szerepel az adatbázisban (${skippedDuplicates.length} db):\n${skippedDuplicates.slice(0, 10).join(', ')}${skippedDuplicates.length > 10 ? '...' : ''}`);
+            }
         }
     };
 
     window.saveEdit = async () => {
         const id = document.getElementById('edit-id').value;
-        const newWord = document.getElementById('edit-word').value;
-        const newMeaning = document.getElementById('edit-meaning').value;
-        const newSentence = document.getElementById('edit-sentence').value;
+        const newWord = document.getElementById('edit-word').value.trim();
+        const newMeaning = document.getElementById('edit-meaning').value.trim();
+        const newSentence = document.getElementById('edit-sentence').value.trim();
         const newFolderId = document.getElementById('edit-folder-select').value;
+        if (!newWord || !newMeaning) return alert('A szó és a jelentés nem lehet üres!');
+
+        const currentWord = allWords.find(w => w.id === id);
+        const lang = currentWord ? currentWord.lang : '';
+
+        const newWordLower = newWord.toLowerCase();
+        const duplicate = allWords.find(w => 
+            w.id !== id && 
+            w.word.trim().toLowerCase() === newWordLower &&
+            (!lang || !w.lang || w.lang.trim().toLowerCase() === lang.trim().toLowerCase())
+        ) || allWords.find(w => w.id !== id && w.word.trim().toLowerCase() === newWordLower);
+
+        if (duplicate) {
+            return alert(`Már létezik egy másik "${duplicate.word}" szó az adatbázisban (${duplicate.lang})! Nem lehet két azonos nevű szó.`);
+        }
+
         try {
             await updateDoc(doc(db, "words", id), { word: newWord, meaning: newMeaning, sentence: newSentence, folderId: newFolderId });
             const idx = allWords.findIndex(w => w.id === id);
