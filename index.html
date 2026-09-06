@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lexicon Aura v9</title>
+    <title>Lexicon</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📖</text></svg>">
     <style>
         /* --- TÉMÁK ÉS VÁLTOZÓK --- */
         :root {
@@ -49,15 +50,37 @@
         /* --- STATS BAR --- */
         .stats-bar {
             width: 100%; max-width: 600px;
-            display: flex; justify-content: space-between;
-            background: var(--bg-card); padding: 15px 25px;
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--bg-card); padding: 12px 20px;
             border-radius: 16px; margin-bottom: 20px;
             box-shadow: var(--shadow); border: 1px solid var(--border);
             display: none;
         }
+        .stats-group {
+            display: flex; gap: 20px; flex: 1; justify-content: space-around; align-items: center;
+        }
         .stat-item { font-size: 1rem; font-weight: 700; display: flex; flex-direction: column; align-items: center; }
         .stat-label { font-size: 0.8rem; color: var(--text-sub); text-transform: uppercase; letter-spacing: 1px; }
         .stat-value { color: var(--primary); font-size: 1.4rem; margin-top: 2px; }
+        .stats-settings-btn {
+            margin-left: 14px;
+            flex-shrink: 0;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .stats-settings-btn:hover {
+            background: var(--bg-input);
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
 
         /* --- AUTH --- */
         #auth-container {
@@ -196,6 +219,41 @@
                 padding: 4px 8px;
                 font-size: 0.75rem;
             }
+            .stats-bar {
+                padding: 10px 14px;
+            }
+            .stats-group {
+                gap: 10px;
+            }
+            .stat-value {
+                font-size: 1.2rem;
+            }
+            .stat-label {
+                font-size: 0.72rem;
+                letter-spacing: 0.5px;
+            }
+            .stats-settings-btn {
+                padding: 6px 10px;
+                font-size: 1.05rem;
+                margin-left: 8px;
+            }
+            .test-card {
+                padding: 20px 14px;
+            }
+            .dynamic-display {
+                row-gap: 8px;
+                column-gap: 8px;
+                margin: 15px 0;
+            }
+            .char-box {
+                font-size: clamp(0.85rem, 4.2vw, var(--slot-font-size, 1.5rem));
+                min-width: clamp(9px, 3.2vw, var(--slot-min-width, 16px));
+                height: clamp(20px, 6vw, var(--slot-height, 30px));
+            }
+            .char-idx {
+                font-size: clamp(0.48rem, 2.2vw, var(--slot-idx-size, 0.65rem));
+                margin-top: 4px;
+            }
         }
 
         /* BEÉPÍTETT KÁRTYA GOMBOK */
@@ -213,12 +271,64 @@
 
         /* TEST MODE */
         .test-card { background: var(--bg-card); padding: 30px; border-radius: var(--radius); text-align: center; border: 1px solid var(--border); width: 100%; max-width: 500px; margin: 0 auto; position: relative; }
-        .dynamic-display { font-family: monospace; font-size: 1.6rem; letter-spacing: 2px; margin: 25px 0; min-height: 40px; word-wrap: break-word; }
+        .dynamic-display {
+            font-family: monospace;
+            margin: 20px 0;
+            min-height: 42px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            row-gap: 12px;
+            column-gap: 12px;
+            width: 100%;
+            line-height: 1;
+        }
+        .word-slot {
+            display: inline-flex;
+            align-items: center;
+            white-space: nowrap;
+            flex-wrap: nowrap;
+            flex-shrink: 0;
+        }
+        .char-slot {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0 1px;
+        }
+        .char-box {
+            height: var(--slot-height, 30px);
+            min-width: var(--slot-min-width, 16px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--slot-font-size, 1.5rem);
+        }
+        .char-idx {
+            font-size: var(--slot-idx-size, 0.65rem);
+            color: var(--text-sub);
+            opacity: 0.6;
+            font-family: sans-serif;
+            letter-spacing: 0;
+            margin-top: 6px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .punct-slot {
+            margin: 0 1px;
+        }
         .char-correct { color: var(--success); font-weight: bold; border-bottom: 2px solid var(--success); }
         .char-wrong { color: var(--error); font-weight: bold; border-bottom: 2px solid var(--error); }
         .char-placeholder { color: var(--border); }
         .char-hint { opacity: 0.5; }
         .test-controls { display: flex; gap: 10px; justify-content: center; margin-bottom: 15px; flex-wrap: wrap; }
+        .test-action-btn { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); padding: 4px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.05); line-height: 1; height: 28px; }
+        .test-action-btn:hover { background: var(--bg-input); border-color: var(--primary); transform: translateY(-1px); }
+        .test-skip-btn { background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.3); color: var(--error); }
+        .test-skip-btn:hover { background: rgba(239, 68, 68, 0.18); border-color: var(--error); }
 
         /* MODAL */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 100; }
@@ -272,7 +382,7 @@
 <div id="loading-screen"><div class="spinner"></div></div>
 
 <div id="auth-container">
-    <h1>Lexicon Aura</h1>
+    <h1>Lexicon</h1>
     <p style="margin-bottom:20px; color:var(--text-sub);">Tanulj, gyűjts pontokat, fejlődj!</p>
     <div class="auth-tabs">
         <button class="auth-tab active" onclick="toggleAuthMode('login')" id="tab-login-mode">Belépés</button>
@@ -285,26 +395,22 @@
 </div>
 
 <div id="app-container">
-    <header>
-        <h1>Lexicon Aura</h1>
-        <div class="header-buttons">
-            <button class="icon-btn" onclick="openSettingsModal()" title="Beállítások">⚙️</button>
-        </div>
-    </header>
-
     <div class="stats-bar" id="stats-bar">
-        <div class="stat-item">
-            <span class="stat-value" id="stat-points">0</span>
-            <span class="stat-label">Pontok 🏆</span>
+        <div class="stats-group">
+            <div class="stat-item">
+                <span class="stat-value" id="stat-points">0</span>
+                <span class="stat-label">Pontok 🏆</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="stat-streak">0</span>
+                <span class="stat-label">Széria 🔥</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="stat-max-streak" style="color:var(--warning);">0</span>
+                <span class="stat-label">Rekord 👑</span>
+            </div>
         </div>
-        <div class="stat-item">
-            <span class="stat-value" id="stat-streak">0</span>
-            <span class="stat-label">Széria 🔥</span>
-        </div>
-        <div class="stat-item">
-            <span class="stat-value" id="stat-max-streak" style="color:var(--warning);">0</span>
-            <span class="stat-label">Rekord 👑</span>
-        </div>
+        <button class="icon-btn stats-settings-btn" onclick="openSettingsModal()" title="Beállítások">⚙️</button>
     </div>
 
     <nav id="nav-lexicon">
@@ -485,7 +591,7 @@
             <h3>Archiválás</h3>
             <button onclick="window.closeArchiveModal()" style="border:none; background:none; font-size:1.5rem; cursor:pointer; color:var(--text-main);">×</button>
         </div>
-        <p style="margin-bottom: 15px; color: var(--text-sub); font-size: 0.95rem;">Hogyan szeretnéd archiválni ezt a szót?</p>
+        <p id="archive-modal-desc" style="margin-bottom: 15px; color: var(--text-sub); font-size: 0.95rem;">Hogyan szeretnéd archiválni ezt a szót?</p>
         <input type="hidden" id="archive-word-id">
         
         <button class="btn-primary" onclick="window.confirmArchive(true)" style="margin-bottom: 15px; background: var(--success); display:flex; align-items:center; justify-content:center; gap:8px;">
@@ -494,11 +600,11 @@
         
         <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px; background: var(--bg-input); padding: 10px; border-radius: 12px;">
             <span style="font-size: 0.9rem; font-weight: bold;">⏳ Újraaktíválódik:</span>
-            <input type="number" id="archive-days-input" min="1" max="365" style="width: 70px; margin: 0; padding: 6px; text-align: center;">
+            <input type="number" id="archive-days-input" min="1" max="365" style="width: 70px; margin: 0; padding: 6px; text-align: center;" oninput="window.updateModalArchiveBtnText(this.value)">
             <span style="color: var(--text-sub); font-size: 0.9rem;">nap múlva</span>
         </div>
         
-        <button class="btn-secondary" onclick="window.confirmArchive(false)">Ideiglenes archiválás</button>
+        <button class="btn-secondary" id="modal-btn-archive-temp" onclick="window.confirmArchive(false)">Archiválás X napra</button>
     </div>
 </div>
 
@@ -569,27 +675,23 @@
             <hr style="border: 0; border-top: 1px solid var(--border); margin: 5px 0;">
 
             <div style="background: var(--bg-input); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
-                <h4 style="margin-bottom: 10px; color: var(--primary); font-size: 1rem;">🎯 Automatikus Archiválás / Hosszabbítás</h4>
+                <h4 style="margin-bottom: 10px; color: var(--primary); font-size: 1rem;">🎯 Automatikus Archiválás</h4>
                 <label style="display: flex; align-items: center; gap: 10px; font-size: 0.9rem; margin-bottom: 10px; font-weight: bold; cursor: pointer;">
                     <input type="checkbox" id="set-auto-archive" onchange="window.saveDetailedSettings()" style="width: auto; margin: 0; transform: scale(1.2);"> Funkció bekapcsolva
                 </label>
                 <label style="display: flex; align-items: center; gap: 10px; font-size: 0.85rem; margin-bottom: 15px; color: var(--text-sub); cursor: pointer;">
                     <input type="checkbox" id="set-show-streak-test" onchange="window.saveDetailedSettings()" style="width: auto; margin: 0;"> Archiválási széria mutatása teszt közben
                 </label>
-                <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem; margin-bottom: 12px;">
                     <span>Sikeres, hibátlan beírások száma:</span>
                     <input type="number" id="set-archive-threshold" min="1" max="20" value="3" onchange="window.saveDetailedSettings()" style="width: 60px; padding: 6px; margin: 0; text-align: center;">
                 </div>
-            </div>
-            
-            <div style="background: var(--bg-input); padding: 15px; border-radius: 12px; border: 1px solid var(--border);">
-                <h4 style="margin-bottom: 10px; color: var(--primary); font-size: 1rem;">⏳ Automatikus Visszaállítás alapérték</h4>
-                <label style="display: flex; align-items: center; gap: 10px; font-size: 0.9rem; margin-bottom: 15px; font-weight: bold; cursor: pointer;">
-                    <input type="checkbox" id="set-auto-restore" onchange="window.saveDetailedSettings()" style="width: auto; margin: 0; transform: scale(1.2);"> Funkció bekapcsolva
-                </label>
                 <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem;">
-                    <span>Alapértelmezett napok száma:</span>
-                    <input type="number" id="set-restore-days" min="1" max="365" value="30" onchange="window.saveDetailedSettings()" style="width: 60px; padding: 6px; margin: 0; text-align: center;">
+                    <span>Alapértelmezett archiválási idő:</span>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <input type="number" id="set-restore-days" min="1" max="365" value="30" onchange="window.saveDetailedSettings()" style="width: 60px; padding: 6px; margin: 0; text-align: center;">
+                        <span style="color: var(--text-sub); font-size: 0.85rem;">nap</span>
+                    </div>
                 </div>
             </div>
 
@@ -642,13 +744,16 @@
     let userMaxStreak = 0;
     
     window.currentTestErrorCount = 0; 
+    window.currentTestMaxWordErrors = 0;
+    window.currentTestTotalErrors = 0;
+    window.pendingTestArchiveWord = null;
     let isLearnGridView = localStorage.getItem('learn_grid_view') !== 'false';
     window.isDeeplPopup = localStorage.getItem('deepl_popup') !== 'false';
     window.autoArchiveEnabled = localStorage.getItem('auto_archive_enabled') === 'true';
     window.showStreakInTest = localStorage.getItem('show_streak_in_test') === 'true'; 
     window.autoArchiveThreshold = parseInt(localStorage.getItem('auto_archive_threshold')) || 3;
-    window.autoRestoreEnabled = localStorage.getItem('auto_restore_enabled') === 'true';
-    window.autoRestoreDays = parseInt(localStorage.getItem('auto_restore_days')) || 30;
+    window.defaultArchiveDays = parseInt(localStorage.getItem('default_archive_days')) || parseInt(localStorage.getItem('auto_restore_days')) || 30;
+    window.autoRestoreDays = window.defaultArchiveDays;
     window.testModeReverse = localStorage.getItem('test_mode_reverse') === 'true';
 
     function applyTheme(theme) {
@@ -676,10 +781,8 @@
         if (showStreak) showStreak.checked = window.showStreakInTest;
         const archThresh = document.getElementById('set-archive-threshold');
         if (archThresh) archThresh.value = window.autoArchiveThreshold;
-        const autoRest = document.getElementById('set-auto-restore');
-        if (autoRest) autoRest.checked = window.autoRestoreEnabled;
         const restDays = document.getElementById('set-restore-days');
-        if (restDays) restDays.value = window.autoRestoreDays;
+        if (restDays) restDays.value = window.defaultArchiveDays;
         window.updateViewBtnText();
         window.updateDeeplBtnText();
     }
@@ -693,8 +796,8 @@
             autoArchiveEnabled: Boolean(window.autoArchiveEnabled),
             showStreakInTest: Boolean(window.showStreakInTest),
             autoArchiveThreshold: parseInt(window.autoArchiveThreshold) || 3,
-            autoRestoreEnabled: Boolean(window.autoRestoreEnabled),
-            autoRestoreDays: parseInt(window.autoRestoreDays) || 30,
+            defaultArchiveDays: parseInt(window.defaultArchiveDays) || 30,
+            autoRestoreDays: parseInt(window.defaultArchiveDays) || 30,
             testModeReverse: Boolean(window.testModeReverse),
             learnGridView: Boolean(isLearnGridView),
             deeplPopup: Boolean(window.isDeeplPopup),
@@ -721,14 +824,15 @@
         window.autoArchiveEnabled = document.getElementById('set-auto-archive').checked;
         window.showStreakInTest = document.getElementById('set-show-streak-test').checked; 
         window.autoArchiveThreshold = parseInt(document.getElementById('set-archive-threshold').value) || 3;
-        window.autoRestoreEnabled = document.getElementById('set-auto-restore').checked;
-        window.autoRestoreDays = parseInt(document.getElementById('set-restore-days').value) || 30;
+        const daysEl = document.getElementById('set-restore-days');
+        window.defaultArchiveDays = daysEl ? (parseInt(daysEl.value) || 30) : 30;
+        window.autoRestoreDays = window.defaultArchiveDays;
 
         localStorage.setItem('auto_archive_enabled', window.autoArchiveEnabled);
         localStorage.setItem('show_streak_in_test', window.showStreakInTest); 
         localStorage.setItem('auto_archive_threshold', window.autoArchiveThreshold);
-        localStorage.setItem('auto_restore_enabled', window.autoRestoreEnabled);
-        localStorage.setItem('auto_restore_days', window.autoRestoreDays);
+        localStorage.setItem('default_archive_days', window.defaultArchiveDays);
+        localStorage.setItem('auto_restore_days', window.defaultArchiveDays);
 
         saveSettingsToDB();
     };
@@ -836,13 +940,16 @@
                         window.autoArchiveThreshold = parseInt(s.autoArchiveThreshold) || 3;
                         localStorage.setItem('auto_archive_threshold', window.autoArchiveThreshold);
                     }
-                    if (s.autoRestoreEnabled !== undefined) {
-                        window.autoRestoreEnabled = !!s.autoRestoreEnabled;
-                        localStorage.setItem('auto_restore_enabled', window.autoRestoreEnabled);
-                    }
-                    if (s.autoRestoreDays !== undefined) {
-                        window.autoRestoreDays = parseInt(s.autoRestoreDays) || 30;
-                        localStorage.setItem('auto_restore_days', window.autoRestoreDays);
+                    if (s.defaultArchiveDays !== undefined) {
+                        window.defaultArchiveDays = parseInt(s.defaultArchiveDays) || 30;
+                        window.autoRestoreDays = window.defaultArchiveDays;
+                        localStorage.setItem('default_archive_days', window.defaultArchiveDays);
+                        localStorage.setItem('auto_restore_days', window.defaultArchiveDays);
+                    } else if (s.autoRestoreDays !== undefined) {
+                        window.defaultArchiveDays = parseInt(s.autoRestoreDays) || 30;
+                        window.autoRestoreDays = window.defaultArchiveDays;
+                        localStorage.setItem('default_archive_days', window.defaultArchiveDays);
+                        localStorage.setItem('auto_restore_days', window.defaultArchiveDays);
                     }
                     if (s.testModeReverse !== undefined) {
                         window.testModeReverse = !!s.testModeReverse;
@@ -1607,12 +1714,33 @@
         } catch(e) { alert("Hiba: " + e.message); }
     };
 
+    window.updateModalArchiveBtnText = (val) => {
+        const btn = document.getElementById('modal-btn-archive-temp');
+        if (!btn) return;
+        const num = parseInt(val);
+        btn.textContent = num ? `Archiválás ${num} napra` : 'Archiválás X napra';
+    };
+
     window.markAsLearnedDirect = (id, e) => {
         if(e) e.stopPropagation();
         const w = allWords.find(x => x.id === id);
         if(!w) return;
         document.getElementById('archive-word-id').value = id;
-        document.getElementById('archive-days-input').value = window.autoRestoreDays || 30;
+        const descEl = document.getElementById('archive-modal-desc');
+        if (descEl) descEl.textContent = `Hogyan szeretnéd archiválni a(z) "${w.word}" szót?`;
+        document.getElementById('archive-days-input').value = window.defaultArchiveDays || 30;
+        window.updateModalArchiveBtnText(window.defaultArchiveDays || 30);
+        document.getElementById('archive-modal').classList.add('open');
+    };
+
+    window.openArchiveModalForTest = (id) => {
+        const w = allWords.find(x => x.id === id);
+        if(!w) return;
+        document.getElementById('archive-word-id').value = id;
+        const descEl = document.getElementById('archive-modal-desc');
+        if (descEl) descEl.textContent = `🎉 Gratulálok! ${window.autoArchiveThreshold}x hibátlanul beírtad a(z) "${w.word}" szót! Hogyan szeretnéd archiválni?`;
+        document.getElementById('archive-days-input').value = window.defaultArchiveDays || 30;
+        window.updateModalArchiveBtnText(window.defaultArchiveDays || 30);
         document.getElementById('archive-modal').classList.add('open');
     };
 
@@ -1620,7 +1748,7 @@
 
     window.confirmArchive = async (isPermanent) => {
         const id = document.getElementById('archive-word-id').value;
-        const days = parseInt(document.getElementById('archive-days-input').value) || window.autoRestoreDays;
+        const days = parseInt(document.getElementById('archive-days-input').value) || window.defaultArchiveDays || 30;
         const w = allWords.find(x => x.id === id);
         if(!w) return;
         
@@ -1629,20 +1757,34 @@
         w.perfectStreak = 0;
         w.permanent = isPermanent;
         if (!isPermanent) w.archiveDays = days;
+        else delete w.archiveDays;
 
         window.closeArchiveModal();
         window.filterAndRenderCards();
         if(window.currentDatabaseFolderId) window.renderFolderWords();
         window.renderDatabase();
+
+        // Ha éppen tesztben archiváltuk
+        const promptBox = document.getElementById('test-archive-prompt');
+        if (promptBox) {
+            promptBox.style.borderColor = 'var(--success)';
+            promptBox.innerHTML = isPermanent 
+                ? `<div style="color:var(--success); font-weight:bold; font-size:1rem; padding:5px 0;">🎉 A szó sikeresen véglegesen archiválva lett! ✅</div>`
+                : `<div style="color:var(--success); font-weight:bold; font-size:1rem; padding:5px 0;">🎉 A szó sikeresen archiválva lett ${days} napra! ✅</div>`;
+            window.pendingTestArchiveWord = null;
+            const btnNext = document.getElementById('btn-next');
+            if (btnNext) btnNext.focus();
+        }
         
         try { 
-            await updateDoc(doc(db, "words", id), { 
+            const updatePayload = { 
                 learned: true, 
                 archivedAt: Date.now(), 
-                perfectStreak: 0,
-                permanent: isPermanent,
-                archiveDays: isPermanent ? null : days
-            }); 
+                perfectStreak: 0, 
+                permanent: isPermanent 
+            };
+            if (!isPermanent) updatePayload.archiveDays = days;
+            await updateDoc(doc(db, "words", id), updatePayload); 
         } catch(err){console.error(err);}
     };
 
@@ -2056,6 +2198,9 @@
         if(!item) { testIndex = 0; window.initTest(); return; }
         revealedHints = []; hintCountForCurrentWord = 0;
         window.currentTestErrorCount = 0; 
+        window.currentTestMaxWordErrors = 0;
+        window.currentTestTotalErrors = 0;
+        window.pendingTestArchiveWord = null;
 
         const promptLabel = window.testModeReverse ? "Idegen szó?" : "Jelentés?";
         const displayWord = window.testModeReverse ? item.meaning : item.word;
@@ -2067,15 +2212,15 @@
         }
 
         div.innerHTML = `
-            <div style="display:flex; justify-content:center; align-items:center; position:relative; margin-bottom:10px; min-height:25px;">
-                <p style="color:var(--text-sub); margin:0;">${promptLabel}</p>
+            <div style="display:flex; justify-content:center; align-items:center; position:relative; margin-bottom:15px; min-height:28px;">
+                <div style="position:absolute; left:0; display:flex; gap:6px; align-items:center;">
+                    <button class="test-action-btn" onclick="window.triggerHint()" id="btn-hint" title="Javaslat (3 ingyenes javaslat maradt a széria megtartásához)">💡<span style="font-size:0.75rem; font-weight:bold; margin-left:3px;">3</span></button>
+                    <button class="test-action-btn test-skip-btn" onclick="window.giveUp()" id="btn-giveup" title="Kihagyás / Megoldás (Figyelem: nullázza a szériát!)">⏭️<span style="font-size:0.7rem; margin-left:2px;">💔</span></button>
+                </div>
+                <p style="color:var(--text-sub); margin:0; font-size:0.95rem; font-weight:600;">${promptLabel}</p>
                 ${streakBadge ? `<div style="position:absolute; right:0;">${streakBadge}</div>` : ''}
             </div>
             <h2 style="font-size:2rem; margin-bottom:15px;">${displayWord}</h2>
-            <div class="test-controls">
-                <button class="btn-secondary" style="font-size:0.8rem; width:auto;" onclick="window.triggerHint()" id="btn-hint" title="Javaslat / Súgás">💡 Javaslat</button>
-                <button class="btn-danger" style="font-size:0.8rem; width:auto;" onclick="window.giveUp()" id="btn-giveup">Megoldás</button>
-            </div>
             <div id="dynamic-display" class="dynamic-display"></div>
             <input type="text" id="test-input" placeholder="Írd be a választ..." autocomplete="off">
             <div id="res-box" style="display:none; padding:15px; margin-top:10px; font-weight:bold; background:var(--bg-input); border-radius:12px;"></div>
@@ -2150,10 +2295,27 @@
         return unfilled;
     }
 
+    window.updateHintButton = () => {
+        const btn = document.getElementById('btn-hint');
+        if (!btn) return;
+        const remaining = Math.max(0, 3 - hintCountForCurrentWord);
+        btn.innerHTML = `💡<span style="font-size:0.75rem; font-weight:bold; margin-left:3px;">${remaining}</span>`;
+        btn.title = remaining > 0 
+            ? `Javaslat (${remaining} ingyenes javaslat maradt a széria megtartásához)` 
+            : `Javaslat (Figyelem! A következő javaslat nullázza a szériát!)`;
+        if (remaining === 0) {
+            btn.style.borderColor = 'var(--warning)';
+            btn.style.color = 'var(--warning)';
+        }
+    };
+
     window.triggerHint = () => {
         if (hintCountForCurrentWord >= 3) { if(!confirm("A 4. hint nullázza a streak-et. Biztosan?")) return; userStreak = 0; saveStats(); }
         hintCountForCurrentWord++;
+        window.updateHintButton();
         window.currentTestErrorCount = 99; 
+        window.currentTestMaxWordErrors = 99;
+        window.currentTestTotalErrors = 99;
 
         const fullTarget = window.testModeReverse ? testList[testIndex].word : testList[testIndex].meaning;
         for(let i = 0; i < fullTarget.length; i++) {
@@ -2184,6 +2346,8 @@
     window.giveUp = () => {
         userStreak = 0; saveStats();
         window.currentTestErrorCount = 99;
+        window.currentTestMaxWordErrors = 99;
+        window.currentTestTotalErrors = 99;
         const fullTarget = window.testModeReverse ? testList[testIndex].word : testList[testIndex].meaning;
         const res = document.getElementById('res-box');
         document.getElementById('test-input').disabled = true;
@@ -2198,6 +2362,100 @@
         window.updateVisuals();
     };
 
+    function getDamerauLevenshteinDistance(source, target) {
+        if (!source) return target ? target.length : 0;
+        if (!target) return source.length;
+        const s = source.toLowerCase();
+        const t = target.toLowerCase();
+        if (s === t) return 0;
+        
+        const sLen = s.length;
+        const tLen = t.length;
+        const d = [];
+        for (let i = 0; i <= sLen; i++) {
+            d[i] = new Array(tLen + 1);
+            d[i][0] = i;
+        }
+        for (let j = 0; j <= tLen; j++) {
+            d[0][j] = j;
+        }
+        
+        for (let i = 1; i <= sLen; i++) {
+            for (let j = 1; j <= tLen; j++) {
+                const cost = s[i - 1] === t[j - 1] ? 0 : 1;
+                d[i][j] = Math.min(
+                    d[i - 1][j] + 1,
+                    d[i][j - 1] + 1,
+                    d[i - 1][j - 1] + cost
+                );
+                if (i > 1 && j > 1 && s[i - 1] === t[j - 2] && s[i - 2] === t[j - 1]) {
+                    d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+                }
+            }
+        }
+        return d[sLen][tLen];
+    }
+
+    function checkPhraseMatch(uPart, tPart) {
+        if (!uPart || !tPart) return { isMatch: false, maxWordError: 99, totalErrors: 99 };
+        const uClean = uPart.trim().toLowerCase();
+        const tClean = tPart.trim().toLowerCase();
+        if (uClean === tClean) {
+            return { isMatch: true, maxWordError: 0, totalErrors: 0 };
+        }
+
+        const cleanWord = (w) => w.replace(/^[.,!?;:"']+|[.,!?;:"']+$/g, '');
+        const uWords = uClean.split(/\s+/).filter(w => w.length > 0).map(cleanWord);
+        const tWords = tClean.split(/\s+/).filter(w => w.length > 0).map(cleanWord);
+
+        // 1. Ha a szavak száma megegyezik, szavanként hasonlítjuk össze
+        if (uWords.length === tWords.length && tWords.length > 0) {
+            let maxWordError = 0;
+            let totalErrors = 0;
+            let matched = true;
+
+            for (let i = 0; i < tWords.length; i++) {
+                const dist = getDamerauLevenshteinDistance(uWords[i], tWords[i]);
+                if (dist > 1) {
+                    matched = false;
+                    break;
+                }
+                if (dist > maxWordError) maxWordError = dist;
+                totalErrors += dist;
+            }
+
+            if (matched) {
+                return { isMatch: true, maxWordError, totalErrors };
+            }
+        }
+
+        // 2. Teljes kifejezés szerinti Damerau-Levenshtein (pl. ha hiányzik vagy pluszban van egy szóköz)
+        const overallDist = getDamerauLevenshteinDistance(uClean, tClean);
+        if (overallDist <= 1) {
+            return { isMatch: true, maxWordError: overallDist, totalErrors: overallDist };
+        }
+
+        // 3. Szóközök nélküli összehasonlítás
+        const uNoSpace = uClean.replace(/\s+/g, '');
+        const tNoSpace = tClean.replace(/\s+/g, '');
+        const noSpaceDist = getDamerauLevenshteinDistance(uNoSpace, tNoSpace);
+        if (noSpaceDist === 0) {
+            return { isMatch: true, maxWordError: 1, totalErrors: 1 };
+        }
+        if (noSpaceDist <= 1 && Math.abs(uWords.length - tWords.length) <= 1) {
+            return { isMatch: true, maxWordError: 1, totalErrors: 1 };
+        }
+
+        // 4. Részszó / kifejezés tartalmazási kompatibilitás (ha a hosszúságkülönbség max 1-2 betű)
+        if ((tClean.includes(uClean) && uClean.length > 3 && tClean.length - uClean.length <= 2) ||
+            (uClean.includes(tClean) && tClean.length > 3 && uClean.length - tClean.length <= 2)) {
+            const diff = Math.abs(uClean.length - tClean.length);
+            return { isMatch: true, maxWordError: diff, totalErrors: diff };
+        }
+
+        return { isMatch: false, maxWordError: 99, totalErrors: 99 };
+    }
+
     window.updateVisuals = () => {
         const inputEl = document.getElementById('test-input');
         if(!inputEl) return;
@@ -2206,8 +2464,6 @@
         const userParts = inputVal.split(',').map(p => p.trim());
         const targetParts = fullTarget.split(',');
         const targetMap = new Array(targetParts.length).fill(null);
-
-        let tempErrorsFound = 0;
 
         userParts.forEach(uPart => {
             if(!uPart) return;
@@ -2222,26 +2478,113 @@
             }
             if (bestMatchIdx !== -1) {
                 targetMap[bestMatchIdx] = uPart;
-            } else {
-                tempErrorsFound += uPart.length;
             }
         });
 
-        let html = '', currentTargetIdx = 0, charInUserText = 0, wordCharIndex = 1;
+        // Szavankénti hiba kiszámítása Damerau-Levenshteinnel a begépelés alatt
+        let tempTotalErrorsFound = 0;
+        let tempMaxWordErrors = 0;
+
+        targetMap.forEach((uText, idx) => {
+            if (!uText) return;
+            const tText = targetParts[idx].trim();
+            const tWords = tText.split(/\s+/).filter(w => w.length > 0);
+            const uWords = uText.trim().split(/\s+/).filter(w => w.length > 0);
+
+            for (let wIdx = 0; wIdx < uWords.length; wIdx++) {
+                if (wIdx < tWords.length) {
+                    const uW = uWords[wIdx];
+                    const tW = tWords[wIdx];
+                    let dist = 0;
+                    if (uW.length < tW.length && tW.toLowerCase().startsWith(uW.toLowerCase())) {
+                        dist = 0;
+                    } else if (uW.length < tW.length) {
+                        const tPrefix = tW.slice(0, uW.length);
+                        dist = getDamerauLevenshteinDistance(uW, tPrefix);
+                    } else {
+                        dist = getDamerauLevenshteinDistance(uW, tW);
+                    }
+                    if (dist > tempMaxWordErrors) tempMaxWordErrors = dist;
+                    tempTotalErrorsFound += dist;
+                } else {
+                    const extraErr = uWords[wIdx].length;
+                    if (extraErr > tempMaxWordErrors) tempMaxWordErrors = extraErr;
+                    tempTotalErrorsFound += extraErr;
+                }
+            }
+        });
+
+        // Adaptív betűméret és térköz beállítása a célkifejezés hossza és szószáma alapján
+        const targetLen = fullTarget.length;
+        const targetWordCount = fullTarget.split(/\s+/).filter(Boolean).length;
+
+        let slotFontSize = '1.55rem';
+        let slotHeight = '32px';
+        let slotMinWidth = '16px';
+        let slotIdxSize = '0.65rem';
+
+        if (targetLen > 40 || targetWordCount >= 6) {
+            slotFontSize = '0.95rem';
+            slotHeight = '22px';
+            slotMinWidth = '10px';
+            slotIdxSize = '0.5rem';
+        } else if (targetLen > 26 || targetWordCount >= 4) {
+            slotFontSize = '1.15rem';
+            slotHeight = '24px';
+            slotMinWidth = '12px';
+            slotIdxSize = '0.55rem';
+        } else if (targetLen > 14 || targetWordCount >= 3) {
+            slotFontSize = '1.35rem';
+            slotHeight = '28px';
+            slotMinWidth = '14px';
+            slotIdxSize = '0.6rem';
+        }
+
+        const displayEl = document.getElementById('dynamic-display');
+        if (displayEl) {
+            displayEl.style.setProperty('--slot-font-size', slotFontSize);
+            displayEl.style.setProperty('--slot-height', slotHeight);
+            displayEl.style.setProperty('--slot-min-width', slotMinWidth);
+            displayEl.style.setProperty('--slot-idx-size', slotIdxSize);
+        }
+
+        // Vizuális karakter kijelzés felépítése szavanként csoportosítva (word-slot)
+        const wordSlots = [];
+        let currentWordChars = [];
+        let currentTargetIdx = 0, charInUserText = 0, wordCharIndex = 1;
+
+        const flushWordSlot = () => {
+            if (currentWordChars.length > 0) {
+                wordSlots.push(`<div class="word-slot">${currentWordChars.join('')}</div>`);
+                currentWordChars = [];
+            }
+        };
 
         for(let i = 0; i < fullTarget.length; i++) {
             const char = fullTarget[i];
             if(char === ',') { 
-                html += `<div style="display:inline-flex; flex-direction:column; align-items:center; margin:0 2px;"><span style="height:30px; display:flex; align-items:center;">,</span><span style="font-size:0.65rem; opacity:0; margin-top:8px;">0</span></div>`; 
-                currentTargetIdx++; charInUserText = 0; wordCharIndex = 1; continue; 
+                currentWordChars.push(`
+                    <div class="char-slot punct-slot">
+                        <span class="char-box">,</span>
+                        <span class="char-idx" style="opacity:0;">0</span>
+                    </div>
+                `);
+                flushWordSlot();
+                currentTargetIdx++;
+                charInUserText = 0;
+                wordCharIndex = 1;
+                continue; 
             }
             if(char === ' ' && charInUserText === 0 && currentTargetIdx > 0) { 
-                html += `<div style="display:inline-flex; flex-direction:column; align-items:center; margin:0 6px;"><span style="height:30px; display:flex; align-items:center;">&nbsp;</span><span style="font-size:0.65rem; opacity:0; margin-top:8px;">0</span></div>`; 
-                wordCharIndex = 1; continue; 
+                flushWordSlot();
+                wordCharIndex = 1;
+                continue; 
             }
             if(char === ' ') { 
-                html += `<div style="display:inline-flex; flex-direction:column; align-items:center; margin:0 6px;"><span style="height:30px; display:flex; align-items:center;">&nbsp;</span><span style="font-size:0.65rem; opacity:0; margin-top:8px;">0</span></div>`; 
-                charInUserText++; wordCharIndex = 1; continue; 
+                flushWordSlot();
+                charInUserText++;
+                wordCharIndex = 1;
+                continue; 
             }
 
             const uText = targetMap[currentTargetIdx];
@@ -2251,31 +2594,29 @@
             if(uText && charInUserText < uText.length) {
                 const uChar = uText[charInUserText];
                 const isMatch = uChar.toLowerCase() === char.toLowerCase();
-                if (!isMatch) tempErrorsFound++;
                 displayHTML = `<span class="${isMatch ? 'char-correct' : (revealedHints.includes(i) ? 'char-hint' : 'char-wrong')}">${isMatch ? (uChar === ' ' ? '&nbsp;' : uChar) : (revealedHints.includes(i) ? char : (uChar === ' ' ? '&nbsp;' : uChar))}</span>`;
                 charInUserText++;
             }
 
-            html += `
-            <div style="display:inline-flex; flex-direction:column; align-items:center; margin:0 1px;">
-                <span style="height:30px; display:flex; align-items:center; justify-content:center;">${displayHTML}</span>
-                <span style="font-size:0.65rem; color:var(--text-sub); opacity:0.6; font-family:sans-serif; letter-spacing:0; margin-top:8px;">${wordCharIndex}</span>
-            </div>`;
+            currentWordChars.push(`
+                <div class="char-slot">
+                    <span class="char-box">${displayHTML}</span>
+                    <span class="char-idx">${wordCharIndex}</span>
+                </div>
+            `);
             wordCharIndex++;
         }
 
-        targetMap.forEach((uText, idx) => {
-            if (uText) {
-                const tText = targetParts[idx].trim();
-                if (uText.length > tText.length) {
-                    tempErrorsFound += (uText.length - tText.length); 
-                }
-            }
-        });
+        flushWordSlot();
+        const html = wordSlots.join('');
 
-        if (tempErrorsFound > window.currentTestErrorCount && window.currentTestErrorCount !== 99) {
-            window.currentTestErrorCount = tempErrorsFound;
+        if (tempMaxWordErrors > window.currentTestMaxWordErrors && window.currentTestErrorCount !== 99) {
+            window.currentTestMaxWordErrors = tempMaxWordErrors;
         }
+        if (tempTotalErrorsFound > window.currentTestTotalErrors && window.currentTestErrorCount !== 99) {
+            window.currentTestTotalErrors = tempTotalErrorsFound;
+        }
+        window.currentTestErrorCount = window.currentTestMaxWordErrors;
 
         document.getElementById('dynamic-display').innerHTML = html;
     };
@@ -2288,17 +2629,35 @@
         const targetParts = fullTarget.split(',').map(s => s.trim().toLowerCase());
 
         const matchedTargetIndices = new Set();
+        let maxWordErrorAcrossMatches = 0;
+        let totalWordErrorsAcrossMatches = 0;
+
         userParts.forEach(u => {
+            let bestMatch = null;
+            let bestIdx = -1;
+
             for (let i = 0; i < targetParts.length; i++) {
                 if (!matchedTargetIndices.has(i)) {
                     const t = targetParts[i];
-                    if (t === u || (t.includes(u) && u.length > 2) || (u.includes(t) && t.length > 2)) {
-                        matchedTargetIndices.add(i);
-                        break;
+                    const res = checkPhraseMatch(u, t);
+                    if (res.isMatch) {
+                        if (!bestMatch || res.maxWordError < bestMatch.maxWordError) {
+                            bestMatch = res;
+                            bestIdx = i;
+                        }
                     }
                 }
             }
+
+            if (bestIdx !== -1) {
+                matchedTargetIndices.add(bestIdx);
+                if (bestMatch.maxWordError > maxWordErrorAcrossMatches) {
+                    maxWordErrorAcrossMatches = bestMatch.maxWordError;
+                }
+                totalWordErrorsAcrossMatches += bestMatch.totalErrors;
+            }
         });
+
         const correctCount = matchedTargetIndices.size;
         const isSuccess = correctCount >= 1;
 
@@ -2324,7 +2683,9 @@
             if(userStreak > userMaxStreak) userMaxStreak = userStreak;
             saveStats();
 
-            let isWithinTolerance = window.currentTestErrorCount <= 1; 
+            const finalMaxWordError = Math.max(window.currentTestMaxWordErrors || 0, maxWordErrorAcrossMatches);
+            const totalErrorsObserved = Math.max(window.currentTestTotalErrors || 0, totalWordErrorsAcrossMatches);
+            let isWithinTolerance = finalMaxWordError <= 1 && window.currentTestErrorCount !== 99;
 
             // Ha több szinonima volt megadva, vagy csak egy részét adtuk meg, töltsük ki az összes szót láthatóan
             if (inputEl) inputEl.value = fullTarget;
@@ -2333,41 +2694,17 @@
             }
             window.updateVisuals();
 
-            let justArchived = false;
-            let justExtended = false;
             let currentPerfectStreak = (currentWord.perfectStreak || 0);
-            let wasAlreadyLearned = currentWord.learned === true;
-            let isPerm = currentWord.permanent === true;
+            let qualifiesForArchive = false;
 
             if (window.autoArchiveEnabled && isWithinTolerance) {
                 currentPerfectStreak += 1;
                 if (currentPerfectStreak >= window.autoArchiveThreshold) {
-                    let newArchiveDays = window.autoRestoreDays;
-                    
-                    if (wasAlreadyLearned && !isPerm) {
-                        justExtended = true;
-                        const msInDay = 1000 * 60 * 60 * 24;
-                        const targetDays = currentWord.archiveDays || window.autoRestoreDays;
-                        let daysLeft = Math.ceil((currentWord.archivedAt + targetDays * msInDay - Date.now()) / msInDay);
-                        if (daysLeft < 0) daysLeft = 0;
-                        newArchiveDays = daysLeft + window.autoRestoreDays;
-                    } else if (!wasAlreadyLearned) {
-                        justArchived = true;
-                    }
-                    
+                    qualifiesForArchive = true;
+                    window.pendingTestArchiveWord = currentWord;
                     const wIdx = allWords.findIndex(w => w.id === currentWord.id);
-                    if (wIdx > -1) {
-                        allWords[wIdx].learned = true; 
-                        allWords[wIdx].archivedAt = Date.now();
-                        allWords[wIdx].perfectStreak = 0;
-                        if (!isPerm && !wasAlreadyLearned) allWords[wIdx].archiveDays = window.autoRestoreDays;
-                    }
-                    
-                    const updateData = { learned: true, archivedAt: Date.now(), perfectStreak: 0 };
-                    if (!isPerm && !wasAlreadyLearned) updateData.archiveDays = window.autoRestoreDays;
-                    
-                    updateDoc(doc(db, "words", currentWord.id), updateData);
-                    currentWord.tempNewArchiveDays = newArchiveDays;
+                    if (wIdx > -1) allWords[wIdx].perfectStreak = currentPerfectStreak;
+                    updateDoc(doc(db, "words", currentWord.id), { perfectStreak: currentPerfectStreak });
                 } else {
                     const wIdx = allWords.findIndex(w => w.id === currentWord.id);
                     if (wIdx > -1) allWords[wIdx].perfectStreak = currentPerfectStreak;
@@ -2389,19 +2726,44 @@
                 : '';
 
             res.style.color='var(--success)';
-            if (justArchived) {
-                res.innerHTML = `${pointsHeading}${bonusInfoHtml}${synonymsInfoHtml}<br><span style="font-size:1rem; color:var(--primary);">🎉 Gratulálok! ${window.autoArchiveThreshold}x hibátlanul (max 1 typo) beírtad, így archiváltuk!</span>`;
-            } else if (justExtended) {
-                const extendText = window.autoRestoreEnabled ? `az archívumban meghosszabbítva ${window.autoRestoreDays} nappal! (Így összesen ${currentWord.tempNewArchiveDays} napod maradt a következő ismétlésig)` : "megerősítve az archívumban!";
-                res.innerHTML = `${pointsHeading}${bonusInfoHtml}${synonymsInfoHtml}<br><span style="font-size:1rem; color:var(--primary);">🎉 Gratulálok! ${window.autoArchiveThreshold}x hibátlanul (max 1 typo) beírtad, így a szó ideje ${extendText}</span>`;
+
+            if (qualifiesForArchive) {
+                const defDays = window.defaultArchiveDays || 30;
+                res.innerHTML = `
+                    ${pointsHeading}${bonusInfoHtml}${synonymsInfoHtml}
+                    <div id="test-archive-prompt" style="margin-top:14px; padding:15px; background:var(--bg-card); border-radius:14px; border:2px solid var(--primary); box-shadow:0 4px 10px rgba(0,0,0,0.06);">
+                        <div style="font-size:1rem; font-weight:800; color:var(--primary); margin-bottom:4px;">
+                            🎉 Gratulálok! ${window.autoArchiveThreshold}x hibátlanul (szavanként max 1 typo) beírtad!
+                        </div>
+                        <div style="font-size:0.85rem; color:var(--text-sub); margin-bottom:12px;">
+                            A szó elérte az archiválási küszöböt. Hogyan szeretnéd archiválni?
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:10px;">
+                            <button type="button" class="btn-primary" onclick="window.applyTestArchiveChoice(true)" style="background:var(--success); padding:10px; font-size:0.95rem; display:flex; align-items:center; justify-content:center; gap:8px;">
+                                <span>📌 Végleges archiválás</span>
+                            </button>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <div style="display:flex; align-items:center; gap:6px; background:var(--bg-input); padding:6px 10px; border-radius:12px; border:1px solid var(--border);">
+                                    <span style="font-size:0.85rem; font-weight:600;">⏳</span>
+                                    <input type="number" id="test-archive-days-input" min="1" max="365" value="${defDays}" style="width:55px; padding:4px; margin:0; text-align:center; font-weight:bold; font-size:0.9rem;" oninput="window.updateTestArchiveBtnText(this.value)">
+                                    <span style="font-size:0.85rem; color:var(--text-sub);">nap</span>
+                                </div>
+                                <button type="button" class="btn-secondary" id="btn-test-archive-temp" onclick="window.applyTestArchiveChoice(false)" style="flex:1; padding:10px; font-size:0.95rem; font-weight:bold;">
+                                    Archiválás ${defDays} napra
+                                </button>
+                            </div>
+                        </div>
+                    </div>`;
+
+                window.openArchiveModalForTest(currentWord.id);
             } else {
                 let txt = `${pointsHeading}${bonusInfoHtml}${synonymsInfoHtml}`;
                 if (window.autoArchiveEnabled) {
                     if (isWithinTolerance) {
-                        const typoNotice = window.currentTestErrorCount === 1 ? "<br>(Egy betűhibát elnéztünk)" : "";
+                        const typoNotice = (totalErrorsObserved > 0 || finalMaxWordError > 0) ? "<br>(Szavanként legfeljebb 1 betűhibát elnéztünk)" : "";
                         txt += `<br><span style="font-size:0.85rem; color:var(--text-sub); display:block; margin-top:5px;">${currentPerfectStreak} / ${window.autoArchiveThreshold} széria.${typoNotice}</span>`;
                     } else {
-                        txt += `<br><span style="font-size:0.85rem; color:var(--error); display:block; margin-top:5px;">Mivel több mint 1 betűt elrontottál a szóban, ez a kör nem számít bele a hibátlan szériába! (0/${window.autoArchiveThreshold})</span>`;
+                        txt += `<br><span style="font-size:0.85rem; color:var(--error); display:block; margin-top:5px;">Mivel valamelyik szóban több mint 1 betűt elrontottál, ez a kör nem számít bele a hibátlan szériába! (0/${window.autoArchiveThreshold})</span>`;
                     }
                 }
                 res.innerHTML = txt;
@@ -2416,7 +2778,75 @@
         }
     };
 
-    window.nextTestItem = () => { testIndex++; window.renderTest(); };
+    window.updateTestArchiveBtnText = (val) => {
+        const btn = document.getElementById('btn-test-archive-temp');
+        if (!btn) return;
+        const num = parseInt(val);
+        btn.textContent = num ? `Archiválás ${num} napra` : 'Archiválás X napra';
+    };
+
+    window.applyTestArchiveChoice = async (isPermanent, customDays) => {
+        if (!window.pendingTestArchiveWord) return;
+        const currentWord = window.pendingTestArchiveWord;
+        const inputEl = document.getElementById('test-archive-days-input');
+        const modalInputEl = document.getElementById('archive-days-input');
+        const days = (customDays !== undefined) ? customDays : (inputEl ? parseInt(inputEl.value) : (modalInputEl ? parseInt(modalInputEl.value) : window.defaultArchiveDays)) || window.defaultArchiveDays || 30;
+
+        const wasAlreadyLearned = currentWord.learned === true;
+        const isPerm = Boolean(isPermanent);
+        let newArchiveDays = days;
+
+        if (wasAlreadyLearned && !isPerm && !currentWord.permanent) {
+            const msInDay = 1000 * 60 * 60 * 24;
+            const targetDays = currentWord.archiveDays || days;
+            let daysLeft = Math.ceil(((currentWord.archivedAt || Date.now()) + targetDays * msInDay - Date.now()) / msInDay);
+            if (daysLeft < 0) daysLeft = 0;
+            newArchiveDays = daysLeft + days;
+        }
+
+        const wIdx = allWords.findIndex(w => w.id === currentWord.id);
+        if (wIdx > -1) {
+            allWords[wIdx].learned = true;
+            allWords[wIdx].archivedAt = Date.now();
+            allWords[wIdx].perfectStreak = 0;
+            allWords[wIdx].permanent = isPerm;
+            if (!isPerm) allWords[wIdx].archiveDays = newArchiveDays;
+            else delete allWords[wIdx].archiveDays;
+        }
+
+        const updateData = {
+            learned: true,
+            archivedAt: Date.now(),
+            perfectStreak: 0,
+            permanent: isPerm
+        };
+        if (!isPerm) updateData.archiveDays = newArchiveDays;
+
+        updateDoc(doc(db, "words", currentWord.id), updateData);
+        window.closeArchiveModal();
+
+        const promptBox = document.getElementById('test-archive-prompt');
+        if (promptBox) {
+            promptBox.style.borderColor = 'var(--success)';
+            promptBox.innerHTML = isPerm
+                ? `<div style="color:var(--success); font-weight:bold; font-size:1rem; padding:4px 0;">🎉 A szó sikeresen véglegesen archiválva lett! ✅</div>`
+                : `<div style="color:var(--success); font-weight:bold; font-size:1rem; padding:4px 0;">🎉 A szó sikeresen archiválva lett ${newArchiveDays} napra! ✅</div>`;
+        }
+        window.pendingTestArchiveWord = null;
+        const btnNext = document.getElementById('btn-next');
+        if (btnNext) btnNext.focus();
+    };
+
+    window.nextTestItem = () => {
+        if (window.pendingTestArchiveWord && !window.pendingTestArchiveWord.learned) {
+            const daysInput = document.getElementById('test-archive-days-input');
+            const chosenDays = daysInput ? parseInt(daysInput.value) : window.defaultArchiveDays;
+            window.applyTestArchiveChoice(false, chosenDays || window.defaultArchiveDays);
+        }
+        window.pendingTestArchiveWord = null;
+        testIndex++;
+        window.renderTest();
+    };
 
 </script>
 </body>
