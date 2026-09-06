@@ -2480,11 +2480,67 @@
             <button class="btn-primary" onclick="window.checkAnswer()" id="btn-check" style="margin-top:15px;">Ellenőrzés</button>
             <button class="btn-secondary hidden" onclick="window.nextTestItem()" id="btn-next" style="width:100%; margin-top:10px;">Tovább</button>`;
 
+        window.lockedInputPrefix = '';
+        window.solvedSynonymsList = [];
+
         const input = document.getElementById('test-input');
         if(input) {
             input.focus();
             input.addEventListener('input', window.updateVisuals);
             input.addEventListener('keypress', e => { if(e.key === 'Enter') window.checkAnswer(); });
+
+            // V23/V23: Helyesen beírt szinonimák törlésének megakadályozása
+            input.addEventListener('keydown', (e) => {
+                if (!window.lockedInputPrefix || window.lockedInputPrefix.length === 0) return;
+                const lockLen = window.lockedInputPrefix.length;
+
+                if (e.key === 'Backspace') {
+                    if (input.selectionStart < lockLen) {
+                        e.preventDefault();
+                        input.setSelectionRange(lockLen, lockLen);
+                    } else if (input.selectionStart === lockLen && input.selectionEnd === lockLen) {
+                        e.preventDefault();
+                    } else if (input.selectionStart < lockLen && input.selectionEnd > lockLen) {
+                        e.preventDefault();
+                        const tail = input.value.slice(input.selectionEnd);
+                        input.value = window.lockedInputPrefix + tail;
+                        input.setSelectionRange(lockLen, lockLen);
+                        input.dispatchEvent(new Event('input'));
+                    }
+                } else if (e.key === 'Delete') {
+                    if (input.selectionStart < lockLen) {
+                        e.preventDefault();
+                        input.setSelectionRange(lockLen, lockLen);
+                    }
+                }
+            });
+
+            input.addEventListener('beforeinput', (e) => {
+                if (!window.lockedInputPrefix || window.lockedInputPrefix.length === 0) return;
+                const lockLen = window.lockedInputPrefix.length;
+
+                if (e.inputType && e.inputType.startsWith('delete')) {
+                    if (input.selectionStart < lockLen || (input.selectionStart === lockLen && e.inputType === 'deleteContentBackward')) {
+                        e.preventDefault();
+                        input.setSelectionRange(lockLen, lockLen);
+                    }
+                } else if (input.selectionStart < lockLen && e.data) {
+                    e.preventDefault();
+                    const tail = input.value.slice(lockLen);
+                    input.value = window.lockedInputPrefix + tail + e.data;
+                    const pos = input.value.length;
+                    input.setSelectionRange(pos, pos);
+                    input.dispatchEvent(new Event('input'));
+                }
+            });
+
+            input.addEventListener('click', () => {
+                if (window.lockedInputPrefix && window.lockedInputPrefix.length > 0) {
+                    if (input.selectionStart < window.lockedInputPrefix.length) {
+                        input.setSelectionRange(window.lockedInputPrefix.length, window.lockedInputPrefix.length);
+                    }
+                }
+            });
         }
         window.updateVisuals();
     };
@@ -3052,7 +3108,7 @@
         const activeWordKey = `${currentTargetIdx}_${currentWordIdxInPart}`;
         const activeWordErrors = wordMistakeCounts[activeWordKey] || 0;
 
-        // 2. Ikon és jelző frissítése (hányszor hibázhatunk/hibáztunk)
+        // 2. Ikon és jelző frissítése: Pontosan az épp oldott szóra mutatja a megengedett hibát!
         const indicator = document.getElementById('test-mistake-indicator');
         const iconEl = document.getElementById('test-mistake-icon');
         const countEl = document.getElementById('test-mistake-count');
@@ -3063,16 +3119,16 @@
                 iconEl.textContent = '❌';
                 countEl.textContent = '0';
                 indicator.title = 'A széria nullázódott! (Egy szónál 2 elírás történt)';
-            } else if (activeWordErrors === 1 || maxMistakesInAnyWord === 1) {
+            } else if (activeWordErrors >= 1) {
                 indicator.className = 'test-mistake-badge state-warn';
                 iconEl.textContent = '⚠️';
                 countEl.textContent = '0';
-                indicator.title = 'Figyelem: 1 elírás történt ennél a szónál! Nincs több hibalehetőség, még egy hiba nullázza a szériát!';
+                indicator.title = 'Figyelem: Ennél a szónál már volt 1 elírás! Még egy hiba nullázza a szériát!';
             } else {
                 indicator.className = 'test-mistake-badge state-safe';
                 iconEl.textContent = '🛡️';
                 countEl.textContent = '1';
-                indicator.title = 'Engedélyezett elírás: szavanként 1 hiba (2. hiba nullázza a szériát)';
+                indicator.title = 'Engedélyezett elírás: Ennél a szónál még 1 hiba megengedett.';
             }
         }
 
@@ -3121,7 +3177,7 @@
     window.updateVisuals = () => {
         const inputEl = document.getElementById('test-input');
         if(!inputEl) return;
-        const inputVal = inputEl.value;
+        let inputVal = inputEl.value;
         const fullTarget = window.testModeReverse ? testList[testIndex].word : testList[testIndex].meaning;
         const userParts = inputVal.split(',').map(p => p.trim());
         const targetParts = fullTarget.split(',');
@@ -3328,7 +3384,86 @@
         // Live vizuális megjelenítés kész (a hibák és széria elbírálása beküldéskor történik)
 
         document.getElementById('dynamic-display').innerHTML = html;
-        window.updateLiveTypoStatus(currentTargetIdx, currentWordIdxInPart);
+
+        // V23/V23: Aktív szó/szinonima és helyesen megoldott szinonimák lezárása
+        const rawTargetParts = fullTarget.split(',').map(s => s.trim());
+        const isMultiSynonym = rawTargetParts.length > 1;
+        let activeTargetIdx = 0;
+        let activeWordIdxInPart = 0;
+
+        if (isMultiSynonym) {
+            // Megkeressük a hibátlanul beírt szinonimákat
+            const solvedList = [];
+            const userTokens = inputVal.split(',').map(s => s.trim());
+
+            rawTargetParts.forEach((tPart, tIdx) => {
+                const tLower = tPart.toLowerCase();
+                const isSolved = userTokens.some(uToken => uToken.toLowerCase() === tLower) ||
+                                 (window.solvedSynonymsList && window.solvedSynonymsList.includes(tPart));
+                if (isSolved && !solvedList.includes(tPart)) {
+                    solvedList.push(tPart);
+                }
+            });
+            window.solvedSynonymsList = solvedList;
+
+            // Ha van megoldott szinonima és még nem mindegyik készült el, lezárjuk a beviteli mező elejét
+            if (solvedList.length > 0 && solvedList.length < rawTargetParts.length) {
+                const expectedPrefix = solvedList.join(', ') + ', ';
+                if (window.lockedInputPrefix !== expectedPrefix) {
+                    window.lockedInputPrefix = expectedPrefix;
+                    if (!inputVal.startsWith(expectedPrefix)) {
+                        const unsolvedTokens = userTokens.filter(uToken => 
+                            !solvedList.some(s => s.toLowerCase() === uToken.toLowerCase())
+                        );
+                        const currentTyping = unsolvedTokens.join(', ');
+                        inputEl.value = expectedPrefix + currentTyping;
+                        inputVal = inputEl.value;
+                        const newPos = inputEl.value.length;
+                        inputEl.setSelectionRange(newPos, newPos);
+                    }
+                }
+            } else if (solvedList.length >= rawTargetParts.length) {
+                window.lockedInputPrefix = solvedList.slice(0, -1).join(', ') + ', ';
+            } else {
+                window.lockedInputPrefix = '';
+            }
+
+            // Meghatározzuk, hogy épp melyik szinonimát gépeli a felhasználó
+            const unsolvedParts = [];
+            rawTargetParts.forEach((tPart, tIdx) => {
+                if (!solvedList.includes(tPart)) {
+                    unsolvedParts.push({ text: tPart, idx: tIdx });
+                }
+            });
+
+            if (unsolvedParts.length > 0) {
+                const lockLen = window.lockedInputPrefix ? window.lockedInputPrefix.length : 0;
+                const editableText = inputVal.slice(lockLen).trim().toLowerCase();
+
+                let bestMatchIdx = unsolvedParts[0].idx;
+                let bestScore = -1;
+
+                unsolvedParts.forEach(item => {
+                    const tLower = item.text.toLowerCase();
+                    let commonPrefix = 0;
+                    while (commonPrefix < editableText.length && commonPrefix < tLower.length && editableText[commonPrefix] === tLower[commonPrefix]) {
+                        commonPrefix++;
+                    }
+                    if (commonPrefix > bestScore) {
+                        bestScore = commonPrefix;
+                        bestMatchIdx = item.idx;
+                    }
+                });
+                activeTargetIdx = bestMatchIdx;
+            } else {
+                activeTargetIdx = rawTargetParts.length - 1;
+            }
+        } else {
+            activeTargetIdx = 0;
+            activeWordIdxInPart = 0;
+        }
+
+        window.updateLiveTypoStatus(activeTargetIdx, activeWordIdxInPart);
     };
 
     window.checkAnswer = () => {
