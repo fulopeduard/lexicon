@@ -324,11 +324,247 @@
         .char-wrong { color: var(--error); font-weight: bold; border-bottom: 2px solid var(--error); }
         .char-placeholder { color: var(--border); }
         .char-hint { opacity: 0.5; }
+        .char-mistake-wrong {
+            color: var(--error) !important;
+            font-weight: 900 !important;
+            border-bottom: 2.5px solid var(--error) !important;
+            text-decoration: underline !important;
+            text-decoration-color: var(--error) !important;
+            text-decoration-thickness: 2px !important;
+        }
+        .typo-cycle-badge {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin-top: 10px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            min-height: 26px;
+        }
         .test-controls { display: flex; gap: 10px; justify-content: center; margin-bottom: 15px; flex-wrap: wrap; }
         .test-action-btn { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-main); padding: 4px 10px; border-radius: 12px; font-size: 0.85rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.05); line-height: 1; height: 28px; }
         .test-action-btn:hover { background: var(--bg-input); border-color: var(--primary); transform: translateY(-1px); }
-        .test-skip-btn { background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.3); color: var(--error); }
+        .test-skip-btn { background: rgba(239, 68, 68, 0.08); border-color: rgba(239, 68, 68, 0.3); color: var(--error); transition: all 0.25s ease; }
         .test-skip-btn:hover { background: rgba(239, 68, 68, 0.18); border-color: var(--error); }
+        .test-skip-btn.skip-btn-safe {
+            background: rgba(16, 185, 129, 0.12) !important;
+            border-color: var(--success) !important;
+            color: var(--success) !important;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.3) !important;
+        }
+        .test-skip-btn.skip-btn-safe:hover {
+            background: rgba(16, 185, 129, 0.22) !important;
+            border-color: var(--success) !important;
+        }
+
+        /* --- V23/V23 TEST CONTROLS UNDER WORD STREAK --- */
+        .test-card-top {
+            position: relative;
+            width: 100%;
+            margin-bottom: 12px;
+        }
+
+        .test-side-controls {
+            position: absolute;
+            top: 0;
+            right: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .test-side-controls .test-word-streak-badge,
+        .test-side-controls .test-action-btn,
+        .test-side-controls .test-mistake-badge,
+        .test-side-controls .test-reward-badge {
+            min-width: 54px;
+            height: 36px;
+            padding: 6px 10px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            font-size: 0.88rem;
+            font-weight: 700;
+            user-select: none;
+            line-height: 1;
+            transition: all 0.25s ease;
+        }
+
+        .test-side-controls .test-word-streak-badge {
+            font-size: 0.82rem;
+            color: var(--text-sub);
+            background: var(--bg-body);
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .test-side-controls .test-action-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+        }
+
+        .test-side-controls .test-action-btn:hover {
+            background: var(--bg-input);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-side-controls .test-action-btn:active {
+            transform: translateY(0);
+        }
+
+        .test-side-controls .test-reward-badge.badge-points {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1.5px solid var(--success);
+            color: var(--success);
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);
+            font-weight: 800;
+        }
+
+        .test-side-controls .test-reward-badge.badge-overall-streak {
+            background: rgba(245, 158, 11, 0.15);
+            border: 1.5px solid var(--warning);
+            color: var(--warning);
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.3);
+            font-weight: 800;
+        }
+
+        @keyframes streakUpAnim {
+            0% { transform: scale(1); }
+            30% { transform: scale(1.35); color: var(--success) !important; border-color: var(--success) !important; box-shadow: 0 0 18px rgba(16, 185, 129, 0.65) !important; }
+            60% { transform: scale(1.12) rotate(2deg); color: var(--success) !important; }
+            100% { transform: scale(1); }
+        }
+        .streak-up-anim {
+            animation: streakUpAnim 0.75s ease-out !important;
+        }
+
+        @keyframes rewardPopAnim {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.22); opacity: 1; }
+            75% { transform: scale(0.95); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .reward-pop-anim {
+            animation: rewardPopAnim 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+        }
+
+        @keyframes statPopAnim {
+            0% { transform: scale(1); }
+            40% { transform: scale(1.3); color: var(--success); }
+            100% { transform: scale(1); }
+        }
+        .stat-pop-anim {
+            animation: statPopAnim 0.6s ease-out !important;
+        }
+
+        .test-prompt-area {
+            min-height: 155px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 0 64px;
+            text-align: center;
+        }
+
+        .test-prompt-label {
+            color: var(--text-sub);
+            margin: 0 0 10px 0;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .test-word-display {
+            font-size: clamp(1.6rem, 5vw, 2.2rem);
+            margin: 0;
+            word-break: break-word;
+            line-height: 1.25;
+            color: var(--text-main);
+        }
+
+        @media (max-width: 600px) {
+            .test-side-controls {
+                gap: 8px;
+            }
+            .test-side-controls .test-word-streak-badge,
+            .test-side-controls .test-action-btn,
+            .test-side-controls .test-mistake-badge,
+            .test-side-controls .test-reward-badge {
+                min-width: 48px;
+                height: 33px;
+                font-size: 0.8rem;
+                padding: 4px 8px;
+            }
+            .test-prompt-area {
+                min-height: 145px;
+                padding: 0 54px;
+            }
+            .test-word-display {
+                font-size: clamp(1.4rem, 5.5vw, 1.85rem);
+            }
+        }
+
+        .test-mistake-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 8px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg-body);
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: default;
+            user-select: none;
+            transition: all 0.25s ease;
+        }
+        .test-mistake-badge.state-safe {
+            color: var(--success);
+            border-color: rgba(16, 185, 129, 0.4);
+            background: rgba(16, 185, 129, 0.08);
+        }
+        .test-mistake-badge.state-warn {
+            color: var(--warning);
+            border-color: rgba(245, 158, 11, 0.5);
+            background: rgba(245, 158, 11, 0.12);
+        }
+        .test-mistake-badge.state-danger {
+            color: var(--error);
+            border-color: rgba(239, 68, 68, 0.5);
+            background: rgba(239, 68, 68, 0.12);
+        }
+
+        @keyframes streakDropAnim {
+            0% { transform: scale(1.35); color: var(--error); text-shadow: 0 0 10px rgba(239, 68, 68, 0.6); }
+            25% { transform: scale(0.9) rotate(-4deg); }
+            50% { transform: scale(1.15) rotate(4deg); }
+            75% { transform: scale(0.95); }
+            100% { transform: scale(1); color: inherit; }
+        }
+        .streak-break-anim {
+            animation: streakDropAnim 0.75s ease-out !important;
+        }
+
+        @keyframes wordStreakDropAnim {
+            0% { transform: scale(1.25); border-color: var(--error) !important; background: rgba(239, 68, 68, 0.18) !important; color: var(--error) !important; }
+            25% { transform: translateX(-4px); }
+            50% { transform: translateX(4px); }
+            75% { transform: translateX(-2px); }
+            100% { transform: scale(1); border-color: var(--error) !important; background: rgba(239, 68, 68, 0.12) !important; color: var(--error) !important; }
+        }
+        .word-streak-break-anim {
+            animation: wordStreakDropAnim 0.75s ease-out forwards !important;
+        }
 
         /* MODAL */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 100; }
@@ -589,7 +825,7 @@
     <div class="modal-content">
         <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
             <h3>Archiválás</h3>
-            <button onclick="window.closeArchiveModal()" style="border:none; background:none; font-size:1.5rem; cursor:pointer; color:var(--text-main);">×</button>
+            <button onclick="window.cancelArchiveModal()" style="border:none; background:none; font-size:1.5rem; cursor:pointer; color:var(--text-main);">×</button>
         </div>
         <p id="archive-modal-desc" style="margin-bottom: 15px; color: var(--text-sub); font-size: 0.95rem;">Hogyan szeretnéd archiválni ezt a szót?</p>
         <input type="hidden" id="archive-word-id">
@@ -605,6 +841,9 @@
         </div>
         
         <button class="btn-secondary" id="modal-btn-archive-temp" onclick="window.confirmArchive(false)">Archiválás X napra</button>
+        <button type="button" class="btn-secondary" id="modal-btn-archive-cancel" onclick="window.cancelArchiveModal()" style="width:100%; margin-top:10px; padding:10px; font-size:0.95rem; font-weight:bold; color:var(--text-sub); border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; gap:6px;">
+            <span>🚫 Ne archiváljuk a szót</span>
+        </button>
     </div>
 </div>
 
@@ -738,6 +977,11 @@
     let testIndex = 0;
     let revealedHints = [];
     let hintCountForCurrentWord = 0;
+    window.currentTestHintBrokeStreak = false;
+    window.currentLiveTypoMistakes = [];
+    window.currentActiveMismatches = {};
+    window.currentTestStreakBroken = false;
+    window.testAnswerChecked = false;
 
     let userPoints = 0;
     let userStreak = 0;
@@ -2177,11 +2421,12 @@
         }
         
         testList = testList.sort(() => Math.random() - 0.5);
-        testIndex = 0; revealedHints = []; hintCountForCurrentWord = 0;
+        testIndex = 0; revealedHints = []; hintCountForCurrentWord = 0; window.currentTestHintBrokeStreak = false; window.currentLiveTypoMistakes = []; window.currentActiveMismatches = {}; window.currentTestStreakBroken = false; window.testAnswerChecked = false; window.currentLiveTypoMistakes = []; window.testAnswerChecked = false; window.currentTestHintBrokeStreak = false;
         window.renderTest();
     };
 
     window.renderTest = () => {
+        if (window.stopTypoAlternation) window.stopTypoAlternation();
         const div = document.getElementById('test-content');
         const typeEl = document.getElementById('test-type-select');
         if(!typeEl) return;
@@ -2196,7 +2441,7 @@
         if(testIndex >= testList.length) { div.innerHTML = `<h3>Vége! 🎉</h3><p>Pontszám: ${userPoints}</p><button class="btn-primary" onclick="window.initTest()">Újra</button>`; return; }
         const item = testList[testIndex];
         if(!item) { testIndex = 0; window.initTest(); return; }
-        revealedHints = []; hintCountForCurrentWord = 0;
+        revealedHints = []; hintCountForCurrentWord = 0; window.currentLiveTypoMistakes = []; window.currentActiveMismatches = {}; window.currentTestStreakBroken = false; window.testAnswerChecked = false;
         window.currentTestErrorCount = 0; 
         window.currentTestMaxWordErrors = 0;
         window.currentTestTotalErrors = 0;
@@ -2206,21 +2451,29 @@
         const displayWord = window.testModeReverse ? item.meaning : item.word;
 
         let streakBadge = '';
-        if (window.autoArchiveEnabled && window.showStreakInTest) {
+        if (window.autoArchiveEnabled) {
             const currentStreak = item.perfectStreak || 0;
-            streakBadge = `<span style="font-size:0.75rem; color:var(--text-sub); background:var(--bg-body); padding:4px 8px; border-radius:8px; border:1px solid var(--border); font-weight:bold;">🎯 ${currentStreak}/${window.autoArchiveThreshold}</span>`;
+            streakBadge = `<span id="test-word-streak-badge" class="test-word-streak-badge" title="Szó széria: ${currentStreak}/${window.autoArchiveThreshold}">🎯 <span id="test-word-streak-val">${currentStreak}</span>/${window.autoArchiveThreshold}</span>`;
         }
 
         div.innerHTML = `
-            <div style="display:flex; justify-content:center; align-items:center; position:relative; margin-bottom:15px; min-height:28px;">
-                <div style="position:absolute; left:0; display:flex; gap:6px; align-items:center;">
+            <div class="test-card-top">
+                <div class="test-side-controls" id="test-side-controls">
+                    ${streakBadge}
                     <button class="test-action-btn" onclick="window.triggerHint()" id="btn-hint" title="Javaslat (3 ingyenes javaslat maradt a széria megtartásához)">💡<span style="font-size:0.75rem; font-weight:bold; margin-left:3px;">3</span></button>
                     <button class="test-action-btn test-skip-btn" onclick="window.giveUp()" id="btn-giveup" title="Kihagyás / Megoldás (Figyelem: nullázza a szériát!)">⏭️<span style="font-size:0.7rem; margin-left:2px;">💔</span></button>
+                    <div id="test-mistake-indicator" class="test-mistake-badge state-safe" title="Engedélyezett elírás: szavanként 1 hiba (2. hiba nullázza a szériát)">
+                        <span id="test-mistake-icon">🛡️</span>
+                        <span id="test-mistake-count" style="font-size:0.75rem; font-weight:800; margin-left:3px;">1</span>
+                    </div>
+                    <div id="test-earned-points-badge" class="test-reward-badge badge-points" style="display:none;" title="Megszerzett pontok"></div>
+                    <div id="test-overall-streak-badge" class="test-reward-badge badge-overall-streak" style="display:none;" title="Összesített széria"></div>
                 </div>
-                <p style="color:var(--text-sub); margin:0; font-size:0.95rem; font-weight:600;">${promptLabel}</p>
-                ${streakBadge ? `<div style="position:absolute; right:0;">${streakBadge}</div>` : ''}
+                <div class="test-prompt-area">
+                    <p class="test-prompt-label">${promptLabel}</p>
+                    <h2 class="test-word-display">${displayWord}</h2>
+                </div>
             </div>
-            <h2 style="font-size:2rem; margin-bottom:15px;">${displayWord}</h2>
             <div id="dynamic-display" class="dynamic-display"></div>
             <input type="text" id="test-input" placeholder="Írd be a választ..." autocomplete="off">
             <div id="res-box" style="display:none; padding:15px; margin-top:10px; font-weight:bold; background:var(--bg-input); border-radius:12px;"></div>
@@ -2302,20 +2555,29 @@
         btn.innerHTML = `💡<span style="font-size:0.75rem; font-weight:bold; margin-left:3px;">${remaining}</span>`;
         btn.title = remaining > 0 
             ? `Javaslat (${remaining} ingyenes javaslat maradt a széria megtartásához)` 
-            : `Javaslat (Figyelem! A következő javaslat nullázza a szériát!)`;
+            : (hintCountForCurrentWord >= 4 
+                ? `Javaslat (A széria már nullázódott)` 
+                : `Javaslat (Figyelem! A 4. javaslat nullázza a szériát!)`);
         if (remaining === 0) {
             btn.style.borderColor = 'var(--warning)';
             btn.style.color = 'var(--warning)';
+        } else {
+            btn.style.borderColor = '';
+            btn.style.color = '';
         }
     };
 
     window.triggerHint = () => {
-        if (hintCountForCurrentWord >= 3) { if(!confirm("A 4. hint nullázza a streak-et. Biztosan?")) return; userStreak = 0; saveStats(); }
+        if (hintCountForCurrentWord >= 3) {
+            if (!window.currentTestHintBrokeStreak) {
+                if (!confirm("A 4. javaslat nullázza a szériát. Biztosan kéred?")) return;
+                userStreak = 0;
+                saveStats();
+                window.currentTestHintBrokeStreak = true;
+            }
+        }
         hintCountForCurrentWord++;
         window.updateHintButton();
-        window.currentTestErrorCount = 99; 
-        window.currentTestMaxWordErrors = 99;
-        window.currentTestTotalErrors = 99;
 
         const fullTarget = window.testModeReverse ? testList[testIndex].word : testList[testIndex].meaning;
         for(let i = 0; i < fullTarget.length; i++) {
@@ -2354,6 +2616,8 @@
         document.getElementById('btn-check').style.display = 'none';
         document.getElementById('btn-hint').style.display = 'none';
         document.getElementById('btn-giveup').style.display = 'none';
+        const mistakeElGiveUp = document.getElementById('test-mistake-indicator');
+        if (mistakeElGiveUp) mistakeElGiveUp.style.display = 'none';
         document.getElementById('btn-next').classList.remove('hidden');
         document.getElementById('btn-next').focus();
         res.style.display = 'block'; res.style.color = 'var(--error)';
@@ -2416,7 +2680,7 @@
 
             for (let i = 0; i < tWords.length; i++) {
                 const dist = getDamerauLevenshteinDistance(uWords[i], tWords[i]);
-                if (dist > 1) {
+                if (dist > 2) {
                     matched = false;
                     break;
                 }
@@ -2431,7 +2695,7 @@
 
         // 2. Teljes kifejezés szerinti Damerau-Levenshtein (pl. ha hiányzik vagy pluszban van egy szóköz)
         const overallDist = getDamerauLevenshteinDistance(uClean, tClean);
-        if (overallDist <= 1) {
+        if (overallDist <= 2) {
             return { isMatch: true, maxWordError: overallDist, totalErrors: overallDist };
         }
 
@@ -2442,8 +2706,8 @@
         if (noSpaceDist === 0) {
             return { isMatch: true, maxWordError: 1, totalErrors: 1 };
         }
-        if (noSpaceDist <= 1 && Math.abs(uWords.length - tWords.length) <= 1) {
-            return { isMatch: true, maxWordError: 1, totalErrors: 1 };
+        if (noSpaceDist <= 2 && Math.abs(uWords.length - tWords.length) <= 1) {
+            return { isMatch: true, maxWordError: noSpaceDist, totalErrors: noSpaceDist };
         }
 
         // 4. Részszó / kifejezés tartalmazási kompatibilitás (ha a hosszúságkülönbség max 1-2 betű)
@@ -2455,6 +2719,404 @@
 
         return { isMatch: false, maxWordError: 99, totalErrors: 99 };
     }
+
+    function findWordOpsWithPositions(uWord, tWord) {
+        if (!uWord || !tWord) return [];
+        const u = uWord.trim().toLowerCase();
+        const t = tWord.trim().toLowerCase();
+        if (u === t) return [];
+
+        const uLen = u.length;
+        const tLen = t.length;
+
+        const dp = [];
+        for (let i = 0; i <= uLen; i++) {
+            dp[i] = new Array(tLen + 1);
+            dp[i][0] = i;
+        }
+        for (let j = 0; j <= tLen; j++) {
+            dp[0][j] = j;
+        }
+
+        for (let i = 1; i <= uLen; i++) {
+            for (let j = 1; j <= tLen; j++) {
+                const cost = u[i - 1] === t[j - 1] ? 0 : 1;
+                dp[i][j] = Math.min(
+                    dp[i - 1][j] + 1,
+                    dp[i][j - 1] + 1,
+                    dp[i - 1][j - 1] + cost
+                );
+                if (i > 1 && j > 1 && u[i - 1] === t[j - 2] && u[i - 2] === t[j - 1]) {
+                    dp[i][j] = Math.min(dp[i][j], dp[i - 2][j - 2] + 1);
+                }
+            }
+        }
+
+        let i = uLen, j = tLen;
+        const ops = [];
+        while (i > 0 || j > 0) {
+            if (i > 1 && j > 1 && u[i - 1] === t[j - 2] && u[i - 2] === t[j - 1] && dp[i][j] === dp[i - 2][j - 2] + 1) {
+                ops.push({
+                    type: 'trans',
+                    targetIdx: j - 2,
+                    targetChars: t.slice(j - 2, j),
+                    userChars: u.slice(i - 2, i),
+                    desc: `felcserélt '${u.slice(i - 2, i)}' betűk ('${t.slice(j - 2, j)}' helyett)`
+                });
+                i -= 2; j -= 2;
+            } else if (i > 0 && j > 0 && dp[i][j] === dp[i - 1][j - 1] && u[i - 1] === t[j - 1]) {
+                i -= 1; j -= 1;
+            } else if (i > 0 && j > 0 && dp[i][j] === dp[i - 1][j - 1] + 1) {
+                ops.push({
+                    type: 'sub',
+                    targetIdx: j - 1,
+                    targetChar: t[j - 1],
+                    userChar: u[i - 1],
+                    desc: `'${u[i - 1]}' helyett '${t[j - 1]}'`
+                });
+                i -= 1; j -= 1;
+            } else if (j > 0 && dp[i][j] === dp[i][j - 1] + 1) {
+                ops.push({
+                    type: 'del',
+                    targetIdx: j - 1,
+                    targetChar: t[j - 1],
+                    desc: `hiányzó '${t[j - 1]}' betű`
+                });
+                j -= 1;
+            } else if (i > 0 && dp[i][j] === dp[i - 1][j] + 1) {
+                ops.push({
+                    type: 'ins',
+                    targetIdx: j,
+                    userChar: u[i - 1],
+                    desc: `felesleges '${u[i - 1]}' betű`
+                });
+                i -= 1;
+            } else {
+                if (i > 0) i--;
+                else if (j > 0) j--;
+            }
+        }
+
+        ops.reverse();
+        return ops;
+    }
+
+    function findWordDetailedErrors(userWord, targetWord) {
+        return findWordOpsWithPositions(userWord, targetWord).map(op => op.desc);
+    }
+
+    function buildWordMistakeVariant(origWord, op) {
+        const chars = Array.from(origWord);
+        if (op.type === 'sub') {
+            const idx = Math.min(op.targetIdx, chars.length - 1);
+            let c = op.userChar;
+            if (chars[idx] && chars[idx] === chars[idx].toUpperCase() && chars[idx] !== chars[idx].toLowerCase()) {
+                c = c.toUpperCase();
+            }
+            chars[idx] = c;
+            return { text: chars.join(''), highlightIndices: [idx] };
+        } else if (op.type === 'trans') {
+            const idx = Math.min(op.targetIdx, Math.max(0, chars.length - 2));
+            const uChars = Array.from(op.userChars);
+            if (chars[idx] && chars[idx] === chars[idx].toUpperCase()) {
+                uChars[0] = uChars[0].toUpperCase();
+                if (uChars.length > 1) uChars[1] = uChars[1].toLowerCase();
+            }
+            chars.splice(idx, 2, ...uChars);
+            return { text: chars.join(''), highlightIndices: [idx, idx + 1] };
+        } else if (op.type === 'del') {
+            const idx = Math.min(op.targetIdx, chars.length);
+            chars.splice(idx, 0, '_');
+            return { text: chars.join(''), highlightIndices: [idx] };
+        } else if (op.type === 'ins') {
+            const idx = Math.min(op.targetIdx, chars.length);
+            chars.splice(idx, 0, op.userChar);
+            return { text: chars.join(''), highlightIndices: [idx] };
+        }
+        return { text: origWord, highlightIndices: [] };
+    }
+
+    function getMistakeVariants(matchedPairs, targetParts, fullTarget) {
+        const variants = [];
+        const allTrackedMistakes = [];
+        const hasMultiWords = targetParts.length > 1 || fullTarget.trim().split(/\s+/).length > 1;
+
+        if (!matchedPairs || !matchedPairs.length) {
+            return { mistakes: [], variants: [] };
+        }
+
+        for (let pIdx = 0; pIdx < matchedPairs.length; pIdx++) {
+            const pair = matchedPairs[pIdx];
+            const uPart = (pair.userPart || '').trim();
+            const tPart = (pair.targetPart || '').trim();
+            const cleanWord = (w) => w.replace(/^[.,!?;:"']+|[.,!?;:"']+$/g, '');
+            const uWords = uPart.split(/\s+/).filter(w => w.length > 0).map(cleanWord);
+            const tWords = tPart.split(/\s+/).filter(w => w.length > 0).map(cleanWord);
+            const effectivePartIdx = (pair.targetIdx !== undefined && pair.targetIdx >= 0) ? pair.targetIdx : pIdx;
+
+            if (uWords.length === tWords.length && tWords.length > 0) {
+                for (let wIdx = 0; wIdx < tWords.length; wIdx++) {
+                    const ops = findWordOpsWithPositions(uWords[wIdx], tWords[wIdx]);
+                    for (let op of ops) {
+                        allTrackedMistakes.push({
+                            partIdx: effectivePartIdx,
+                            wordIdx: wIdx,
+                            targetWord: tWords[wIdx],
+                            op: op,
+                            desc: op.desc
+                        });
+                        if (allTrackedMistakes.length >= 2) break;
+                    }
+                    if (allTrackedMistakes.length >= 2) break;
+                }
+            } else {
+                const ops = findWordOpsWithPositions(uPart, tPart);
+                for (let op of ops) {
+                    allTrackedMistakes.push({
+                        partIdx: effectivePartIdx,
+                        wordIdx: 0,
+                        targetWord: tPart,
+                        op: op,
+                        desc: op.desc
+                    });
+                    if (allTrackedMistakes.length >= 2) break;
+                }
+            }
+            if (allTrackedMistakes.length >= 2) break;
+        }
+
+        const simpleMistakes = allTrackedMistakes.map(m => ({
+            desc: m.desc,
+            word: hasMultiWords ? m.targetWord : ''
+        }));
+
+        for (let i = 0; i < allTrackedMistakes.length; i++) {
+            const m = allTrackedMistakes[i];
+            const newTargetParts = targetParts.map(t => t.trim().split(/\s+/));
+            const tWord = (newTargetParts[m.partIdx] && newTargetParts[m.partIdx][m.wordIdx]) 
+                ? newTargetParts[m.partIdx][m.wordIdx] 
+                : m.targetWord;
+            const built = buildWordMistakeVariant(tWord, m.op);
+            if (newTargetParts[m.partIdx] && newTargetParts[m.partIdx][m.wordIdx]) {
+                newTargetParts[m.partIdx][m.wordIdx] = built.text;
+            }
+            const fullVariantText = newTargetParts.map(parts => parts.join(' ')).join(', ');
+
+            variants.push({
+                index: i + 1,
+                desc: m.desc,
+                targetWord: hasMultiWords ? m.targetWord : '',
+                partIdx: m.partIdx,
+                wordIdx: m.wordIdx,
+                highlightWord: built.text,
+                highlightIndices: built.highlightIndices,
+                fullVariantText: fullVariantText
+            });
+        }
+
+        return { mistakes: simpleMistakes, variants: variants };
+    }
+
+    function getFirstTwoMistakes(matchedPairs, hasMultipleWordsTotal) {
+        const res = getMistakeVariants(matchedPairs, [], '');
+        if (res.mistakes && res.mistakes.length > 0) return res.mistakes;
+        return [];
+    }
+
+    window.typoCycleTimer = null;
+    window.typoCycleStep = 0;
+    window.currentTypoSteps = [];
+
+    window.stopTypoAlternation = () => {
+        if (window.typoCycleTimer) {
+            clearTimeout(window.typoCycleTimer);
+            window.typoCycleTimer = null;
+        }
+        const badge = document.getElementById('typo-cycle-badge');
+        if (badge) badge.remove();
+    };
+
+    window.renderAlternationState = (variant, targetParts, fullTarget) => {
+        const displayEl = document.getElementById('dynamic-display');
+        const inputEl = document.getElementById('test-input');
+        if (!displayEl) return;
+
+        const targetLen = fullTarget.length;
+        const targetWordCount = fullTarget.split(/\s+/).filter(Boolean).length;
+
+        let slotFontSize = '1.55rem';
+        let slotHeight = '32px';
+        let slotMinWidth = '16px';
+        let slotIdxSize = '0.65rem';
+
+        if (targetLen > 40 || targetWordCount >= 6) {
+            slotFontSize = '0.95rem'; slotHeight = '22px'; slotMinWidth = '10px'; slotIdxSize = '0.5rem';
+        } else if (targetLen > 26 || targetWordCount >= 4) {
+            slotFontSize = '1.15rem'; slotHeight = '24px'; slotMinWidth = '12px'; slotIdxSize = '0.55rem';
+        } else if (targetLen > 14 || targetWordCount >= 3) {
+            slotFontSize = '1.35rem'; slotHeight = '28px'; slotMinWidth = '14px'; slotIdxSize = '0.6rem';
+        }
+
+        displayEl.style.setProperty('--slot-font-size', slotFontSize);
+        displayEl.style.setProperty('--slot-height', slotHeight);
+        displayEl.style.setProperty('--slot-min-width', slotMinWidth);
+        displayEl.style.setProperty('--slot-idx-size', slotIdxSize);
+
+        const wordSlots = [];
+
+        targetParts.forEach((tPart, pIdx) => {
+            const rawWords = tPart.trim().split(/\s+/).filter(w => w.length > 0);
+            rawWords.forEach((rawW, wIdx) => {
+                const isTargetWord = variant && (pIdx === variant.partIdx) && (wIdx === variant.wordIdx);
+                const wordStr = isTargetWord ? variant.highlightWord : rawW;
+                const highlightIndices = isTargetWord ? (variant.highlightIndices || []) : [];
+
+                const charSlots = [];
+                for (let k = 0; k < wordStr.length; k++) {
+                    const c = wordStr[k];
+                    const isWrong = isTargetWord && highlightIndices.includes(k);
+                    const spanClass = isWrong ? 'char-wrong char-mistake-wrong' : 'char-correct';
+                    charSlots.push(`
+                        <div class="char-slot">
+                            <span class="char-box"><span class="${spanClass}">${c === ' ' ? '&nbsp;' : c}</span></span>
+                            <span class="char-idx">${k + 1}</span>
+                        </div>
+                    `);
+                }
+
+                if (wIdx === rawWords.length - 1 && pIdx < targetParts.length - 1) {
+                    charSlots.push(`
+                        <div class="char-slot punct-slot">
+                            <span class="char-box">,</span>
+                            <span class="char-idx" style="opacity:0;">0</span>
+                        </div>
+                    `);
+                }
+
+                wordSlots.push(`<div class="word-slot">${charSlots.join('')}</div>`);
+            });
+        });
+
+        let badgeHtml = '';
+        if (!variant) {
+            badgeHtml = `<span style="color:var(--success); background:rgba(16,185,129,0.12); padding:4px 12px; border-radius:12px; border:1px solid rgba(16,185,129,0.25);">✓ Helyes megoldás</span>`;
+            if (inputEl) inputEl.value = fullTarget;
+        } else {
+            const wordCtx = variant.targetWord ? ` (${variant.targetWord})` : '';
+            badgeHtml = `<span style="color:var(--error); background:rgba(239,68,68,0.12); padding:4px 12px; border-radius:12px; border:1px solid rgba(239,68,68,0.25);">⚠️ ${variant.index}. hiba${wordCtx}: <u>${variant.desc}</u></span>`;
+            if (inputEl) inputEl.value = variant.fullVariantText;
+        }
+
+        displayEl.innerHTML = wordSlots.join('') + `<div id="typo-cycle-badge" class="typo-cycle-badge">${badgeHtml}</div>`;
+    };
+
+    window.startTypoAlternation = (variants, targetParts, fullTarget) => {
+        window.stopTypoAlternation();
+        if (!variants || !variants.length) return;
+
+        const steps = [];
+        if (variants.length === 1) {
+            steps.push({ variant: null, ms: 1500 });
+            steps.push({ variant: variants[0], ms: 1600 });
+        } else {
+            steps.push({ variant: null, ms: 1500 });
+            steps.push({ variant: variants[0], ms: 1600 });
+            steps.push({ variant: null, ms: 1200 });
+            steps.push({ variant: variants[1], ms: 1600 });
+        }
+
+        window.currentTypoSteps = steps;
+        let stepIndex = 0;
+        window.renderAlternationState(steps[0].variant, targetParts, fullTarget);
+
+        function nextStep() {
+            stepIndex = (stepIndex + 1) % steps.length;
+            window.typoCycleStep = stepIndex;
+            const current = steps[stepIndex];
+            window.renderAlternationState(current.variant, targetParts, fullTarget);
+            window.typoCycleTimer = setTimeout(nextStep, current.ms);
+        }
+
+        window.typoCycleTimer = setTimeout(nextStep, steps[0].ms);
+    };
+
+    window.updateLiveTypoStatus = (currentTargetIdx, currentWordIdxInPart) => {
+        // 1. Számoljuk a hibákat szavanként
+        const wordMistakeCounts = {};
+        (window.currentLiveTypoMistakes || []).forEach(m => {
+            const wKey = `${m.partIdx}_${m.wordIdx}`;
+            wordMistakeCounts[wKey] = (wordMistakeCounts[wKey] || 0) + 1;
+        });
+
+        const maxMistakesInAnyWord = Object.values(wordMistakeCounts).reduce((max, c) => Math.max(max, c), 0);
+        const activeWordKey = `${currentTargetIdx}_${currentWordIdxInPart}`;
+        const activeWordErrors = wordMistakeCounts[activeWordKey] || 0;
+
+        // 2. Ikon és jelző frissítése (hányszor hibázhatunk/hibáztunk)
+        const indicator = document.getElementById('test-mistake-indicator');
+        const iconEl = document.getElementById('test-mistake-icon');
+        const countEl = document.getElementById('test-mistake-count');
+
+        if (indicator && iconEl && countEl) {
+            if (maxMistakesInAnyWord >= 2) {
+                indicator.className = 'test-mistake-badge state-danger';
+                iconEl.textContent = '❌';
+                countEl.textContent = '0';
+                indicator.title = 'A széria nullázódott! (Egy szónál 2 elírás történt)';
+            } else if (activeWordErrors === 1 || maxMistakesInAnyWord === 1) {
+                indicator.className = 'test-mistake-badge state-warn';
+                iconEl.textContent = '⚠️';
+                countEl.textContent = '0';
+                indicator.title = 'Figyelem: 1 elírás történt ennél a szónál! Nincs több hibalehetőség, még egy hiba nullázza a szériát!';
+            } else {
+                indicator.className = 'test-mistake-badge state-safe';
+                iconEl.textContent = '🛡️';
+                countEl.textContent = '1';
+                indicator.title = 'Engedélyezett elírás: szavanként 1 hiba (2. hiba nullázza a szériát)';
+            }
+        }
+
+        // 3. Ha 2x hibázunk egy szónál (és nincs 1-3 javaslat védve), azonnali nullázás és animáció!
+        const hintProtected = (hintCountForCurrentWord > 0 && hintCountForCurrentWord < 4);
+        if (maxMistakesInAnyWord >= 2 && !hintProtected && !window.currentTestStreakBroken) {
+            window.currentTestStreakBroken = true;
+
+            // A. Kihagyás / Megoldás gomb zölddé válik és a szívtörés eltűnik
+            const giveUpBtn = document.getElementById('btn-giveup');
+            if (giveUpBtn) {
+                giveUpBtn.classList.add('skip-btn-safe');
+                giveUpBtn.innerHTML = `⏭️`;
+                giveUpBtn.title = "Kihagyás / Megoldás (A széria már nullázódott, bátran megtekintheted a megoldást!)";
+            }
+
+            // B. Fejléc széria nullázódása animációval
+            userStreak = 0;
+            saveStats();
+            const statEl = document.getElementById('stat-streak');
+            if (statEl) {
+                statEl.classList.remove('streak-break-anim');
+                void statEl.offsetWidth;
+                statEl.classList.add('streak-break-anim');
+            }
+
+            // C. Szó széria (perfectStreak) nullázódása animációval
+            const currentWord = testList[testIndex];
+            if (currentWord) {
+                currentWord.perfectStreak = 0;
+                const wIdx = allWords.findIndex(w => w.id === currentWord.id);
+                if (wIdx > -1) allWords[wIdx].perfectStreak = 0;
+                updateDoc(doc(db, "words", currentWord.id), { perfectStreak: 0 });
+            }
+            const wordStreakVal = document.getElementById('test-word-streak-val');
+            if (wordStreakVal) wordStreakVal.textContent = '0';
+            const wordStreakBadge = document.getElementById('test-word-streak-badge');
+            if (wordStreakBadge) {
+                wordStreakBadge.classList.remove('word-streak-break-anim');
+                void wordStreakBadge.offsetWidth;
+                wordStreakBadge.classList.add('word-streak-break-anim');
+            }
+        }
+    };
 
     window.updateVisuals = () => {
         const inputEl = document.getElementById('test-input');
@@ -2552,6 +3214,8 @@
         const wordSlots = [];
         let currentWordChars = [];
         let currentTargetIdx = 0, charInUserText = 0, wordCharIndex = 1;
+        let currentWordIdxInPart = 0;
+        const nextActiveMismatches = {};
 
         const flushWordSlot = () => {
             if (currentWordChars.length > 0) {
@@ -2571,6 +3235,7 @@
                 `);
                 flushWordSlot();
                 currentTargetIdx++;
+                currentWordIdxInPart = 0;
                 charInUserText = 0;
                 wordCharIndex = 1;
                 continue; 
@@ -2582,6 +3247,7 @@
             }
             if(char === ' ') { 
                 flushWordSlot();
+                currentWordIdxInPart++;
                 charInUserText++;
                 wordCharIndex = 1;
                 continue; 
@@ -2595,6 +3261,54 @@
                 const uChar = uText[charInUserText];
                 const isMatch = uChar.toLowerCase() === char.toLowerCase();
                 displayHTML = `<span class="${isMatch ? 'char-correct' : (revealedHints.includes(i) ? 'char-hint' : 'char-wrong')}">${isMatch ? (uChar === ' ' ? '&nbsp;' : uChar) : (revealedHints.includes(i) ? char : (uChar === ' ' ? '&nbsp;' : uChar))}</span>`;
+
+                // Valós idejű elírások rögzítése a beírás során (V19)
+                if (!isMatch && !revealedHints.includes(i) && !window.testAnswerChecked && uChar && uChar.trim().length > 0) {
+                    if (!window.currentLiveTypoMistakes) window.currentLiveTypoMistakes = [];
+                    const charIdx0 = wordCharIndex - 1;
+                    const slotKey = `${currentTargetIdx}_${currentWordIdxInPart}_${charIdx0}`;
+                    nextActiveMismatches[slotKey] = uChar.toLowerCase();
+
+                    const wasActive = window.currentActiveMismatches && (window.currentActiveMismatches[slotKey] === uChar.toLowerCase());
+                    if (!wasActive) {
+                        const rawTargetParts = fullTarget.split(',').map(s => s.trim());
+                        const partWords = (rawTargetParts[currentTargetIdx] || fullTarget).split(/\s+/).filter(Boolean);
+                        const origWord = partWords[currentWordIdxInPart] || char;
+
+                        const wChars = Array.from(origWord);
+                        const dispUChar = (charIdx0 < wChars.length && wChars[charIdx0] === wChars[charIdx0].toUpperCase() && wChars[charIdx0] !== wChars[charIdx0].toLowerCase())
+                            ? uChar.toUpperCase()
+                            : uChar.toLowerCase();
+                        if (charIdx0 < wChars.length) {
+                            wChars[charIdx0] = dispUChar;
+                        } else {
+                            wChars.push(dispUChar);
+                        }
+                        const highlightWord = wChars.join('');
+
+                        const newTargetParts = rawTargetParts.map(t => t.trim().split(/\s+/));
+                        if (newTargetParts[currentTargetIdx] && newTargetParts[currentTargetIdx][currentWordIdxInPart]) {
+                            newTargetParts[currentTargetIdx][currentWordIdxInPart] = highlightWord;
+                        }
+                        const fullVariantText = newTargetParts.map(parts => parts.join(' ')).join(', ');
+
+                        window.currentLiveTypoMistakes.push({
+                            id: window.currentLiveTypoMistakes.length + 1,
+                            slotKey: slotKey,
+                            partIdx: currentTargetIdx,
+                            wordIdx: currentWordIdxInPart,
+                            charIdx: charIdx0,
+                            targetWord: origWord,
+                            highlightWord: highlightWord,
+                            highlightIndices: [charIdx0],
+                            fullVariantText: fullVariantText,
+                            desc: `'${char}' helyett '${uChar}'`,
+                            targetChar: char,
+                            userChar: uChar
+                        });
+                    }
+                }
+
                 charInUserText++;
             }
 
@@ -2609,26 +3323,26 @@
 
         flushWordSlot();
         const html = wordSlots.join('');
+        window.currentActiveMismatches = nextActiveMismatches;
 
-        if (tempMaxWordErrors > window.currentTestMaxWordErrors && window.currentTestErrorCount !== 99) {
-            window.currentTestMaxWordErrors = tempMaxWordErrors;
-        }
-        if (tempTotalErrorsFound > window.currentTestTotalErrors && window.currentTestErrorCount !== 99) {
-            window.currentTestTotalErrors = tempTotalErrorsFound;
-        }
-        window.currentTestErrorCount = window.currentTestMaxWordErrors;
+        // Live vizuális megjelenítés kész (a hibák és széria elbírálása beküldéskor történik)
 
         document.getElementById('dynamic-display').innerHTML = html;
+        window.updateLiveTypoStatus(currentTargetIdx, currentWordIdxInPart);
     };
 
     window.checkAnswer = () => {
+        if (window.stopTypoAlternation) window.stopTypoAlternation();
+        window.testAnswerChecked = true;
         const inputEl = document.getElementById('test-input');
         const inputVal = inputEl ? inputEl.value.trim().toLowerCase() : '';
         const fullTarget = window.testModeReverse ? testList[testIndex].word : testList[testIndex].meaning;
         const userParts = inputVal.split(',').map(s => s.trim().toLowerCase()).filter(s => s.length > 0);
-        const targetParts = fullTarget.split(',').map(s => s.trim().toLowerCase());
+        const rawTargetParts = fullTarget.split(',').map(s => s.trim());
+        const targetParts = rawTargetParts.map(s => s.toLowerCase());
 
         const matchedTargetIndices = new Set();
+        const matchedPairs = [];
         let maxWordErrorAcrossMatches = 0;
         let totalWordErrorsAcrossMatches = 0;
 
@@ -2651,6 +3365,7 @@
 
             if (bestIdx !== -1) {
                 matchedTargetIndices.add(bestIdx);
+                matchedPairs.push({ userPart: u, targetPart: targetParts[bestIdx], targetIdx: bestIdx });
                 if (bestMatch.maxWordError > maxWordErrorAcrossMatches) {
                     maxWordErrorAcrossMatches = bestMatch.maxWordError;
                 }
@@ -2666,6 +3381,8 @@
         document.getElementById('btn-check').style.display = 'none';
         document.getElementById('btn-hint').style.display = 'none';
         document.getElementById('btn-giveup').style.display = 'none';
+        const mistakeElCheck = document.getElementById('test-mistake-indicator');
+        if (mistakeElCheck) mistakeElCheck.style.display = 'none';
         document.getElementById('btn-next').classList.remove('hidden');
         document.getElementById('btn-next').focus();
         res.style.display = 'block';
@@ -2679,13 +3396,77 @@
             const earnedPoints = 50 + bonusPoints;
 
             userPoints += earnedPoints; 
-            userStreak += 1;
-            if(userStreak > userMaxStreak) userMaxStreak = userStreak;
-            saveStats();
 
-            const finalMaxWordError = Math.max(window.currentTestMaxWordErrors || 0, maxWordErrorAcrossMatches);
-            const totalErrorsObserved = Math.max(window.currentTestTotalErrors || 0, totalWordErrorsAcrossMatches);
-            let isWithinTolerance = finalMaxWordError <= 1 && window.currentTestErrorCount !== 99;
+            const finalMaxWordError = maxWordErrorAcrossMatches;
+            const totalErrorsObserved = totalWordErrorsAcrossMatches;
+
+            // Hibák és elírások összegyűjtése (a gépelés közben elkövetett és a beküldött elírások)
+            const pairsForErrors = matchedPairs.length > 0 
+                ? matchedPairs 
+                : (userParts.length > 0 && targetParts.length > 0 ? [{ userPart: userParts[0], targetPart: targetParts[0], targetIdx: 0 }] : []);
+            const typoData = getMistakeVariants(pairsForErrors, rawTargetParts, fullTarget);
+
+            // Összes hiba kombinálása: gépelés közbeni hibák + beküldött hibák
+            const combinedMistakes = [];
+            const addedSlotKeys = new Set();
+
+            if (window.currentLiveTypoMistakes && window.currentLiveTypoMistakes.length > 0) {
+                window.currentLiveTypoMistakes.forEach(m => {
+                    combinedMistakes.push(m);
+                    if (m.slotKey) addedSlotKeys.add(m.slotKey);
+                });
+            }
+
+            if (typoData.variants && typoData.variants.length > 0) {
+                typoData.variants.forEach(v => {
+                    const charIdx = (v.highlightIndices && v.highlightIndices.length > 0) ? v.highlightIndices[0] : 0;
+                    const slotKey = `${v.partIdx}_${v.wordIdx}_${charIdx}`;
+                    if (!addedSlotKeys.has(slotKey)) {
+                        addedSlotKeys.add(slotKey);
+                        combinedMistakes.push(v);
+                    }
+                });
+            }
+
+            // Számoljuk meg a hibákat szavanként és összesen
+            const wordMistakeCounts = {};
+            combinedMistakes.forEach(m => {
+                const wKey = `${m.partIdx}_${m.wordIdx}`;
+                wordMistakeCounts[wKey] = (wordMistakeCounts[wKey] || 0) + 1;
+            });
+            const maxMistakesInAnyWord = Object.values(wordMistakeCounts).reduce((max, c) => Math.max(max, c), 0);
+            const totalMistakesCount = combinedMistakes.length;
+
+            const displayVariants = combinedMistakes.slice(0, 2).map((m, idx) => ({
+                ...m,
+                index: idx + 1
+            }));
+
+            // Szabály (V20):
+            // Egy szónál max 1-et lehet hibázni! Ha bármelyik szónál 2x hibázunk (maxMistakesInAnyWord >= 2),
+            // a rendszer ezt NEM fogadja el a szériánál! A szó szériája 0/3-ra vált, és a fejlécben a széria is 0-ra vált.
+            const hasTooManyWordErrors = (maxMistakesInAnyWord >= 2);
+
+            const hintBrokeStreak = (hintCountForCurrentWord >= 4) || window.currentTestHintBrokeStreak;
+            let isWithinTolerance = false;
+            if (hintBrokeStreak) {
+                isWithinTolerance = false;
+            } else if (hintCountForCurrentWord > 0) {
+                // V17 szabály: 1-3 javaslat használata esetén nem számítanak az elírások, a széria garantált
+                isWithinTolerance = true;
+            } else {
+                // Javaslat nélkül (V20): szavanként max 1 elírás engedélyezett (2. hiba nullázza a szériát), és a beküldöttben szavanként max 1 hiba maradhat
+                isWithinTolerance = !hasTooManyWordErrors && (finalMaxWordError <= 1);
+            }
+
+            const prevUserStreak = userStreak;
+            if (isWithinTolerance) {
+                userStreak += 1;
+                if(userStreak > userMaxStreak) userMaxStreak = userStreak;
+            } else {
+                userStreak = 0;
+            }
+            saveStats(); // Azonnal frissíti a fejlécben a szériát és menti a statisztikát!
 
             // Ha több szinonima volt megadva, vagy csak egy részét adtuk meg, töltsük ki az összes szót láthatóan
             if (inputEl) inputEl.value = fullTarget;
@@ -2727,13 +3508,66 @@
 
             res.style.color='var(--success)';
 
+            if (isWithinTolerance) {
+                // V23/V23 ÚJDONSÁG:
+                // 1. A szó streak jelvény animációval felmegy (pl. 1-ről 2-re / 3-ra)
+                const wordStreakVal = document.getElementById('test-word-streak-val');
+                const wordStreakBadge = document.getElementById('test-word-streak-badge');
+                if (wordStreakVal) wordStreakVal.textContent = currentPerfectStreak;
+                if (wordStreakBadge) {
+                    wordStreakBadge.title = `Szó széria: ${currentPerfectStreak}/${window.autoArchiveThreshold}`;
+                    wordStreakBadge.classList.remove('streak-up-anim');
+                    wordStreakBadge.classList.remove('word-streak-break-anim');
+                    void wordStreakBadge.offsetWidth;
+                    wordStreakBadge.classList.add('streak-up-anim');
+                }
+
+                // 2. Pontok jelvény animációval megjelenik a jobb oldali sávban
+                const pointsBadge = document.getElementById('test-earned-points-badge');
+                if (pointsBadge) {
+                    pointsBadge.style.display = 'inline-flex';
+                    pointsBadge.innerHTML = `+${earnedPoints} <span style="font-size:0.72rem; margin-left:2px; font-weight:700;">pont</span>`;
+                    pointsBadge.classList.remove('reward-pop-anim');
+                    void pointsBadge.offsetWidth;
+                    pointsBadge.classList.add('reward-pop-anim');
+                }
+
+                // 3. Összesített széria jelvény animációval megjelenik a jobb oldali sávban
+                const overallBadge = document.getElementById('test-overall-streak-badge');
+                if (overallBadge) {
+                    overallBadge.style.display = 'inline-flex';
+                    const streakDisplay = (prevUserStreak < userStreak)
+                        ? `🔥 <span style="font-size:0.72rem; opacity:0.65; margin-right:2px; font-weight:normal;">${prevUserStreak}➔</span>${userStreak}`
+                        : `🔥 ${userStreak}`;
+                    overallBadge.innerHTML = streakDisplay;
+                    overallBadge.title = `Összesített széria: ${prevUserStreak} ➔ ${userStreak}`;
+                    overallBadge.classList.remove('reward-pop-anim');
+                    void overallBadge.offsetWidth;
+                    overallBadge.classList.add('reward-pop-anim');
+                }
+
+                // 4. Fejléc széria és pont animáció
+                const statStreak = document.getElementById('stat-streak');
+                if (statStreak) {
+                    statStreak.classList.remove('streak-up-anim');
+                    void statStreak.offsetWidth;
+                    statStreak.classList.add('streak-up-anim');
+                }
+                const statPoints = document.getElementById('stat-points');
+                if (statPoints) {
+                    statPoints.classList.remove('stat-pop-anim');
+                    void statPoints.offsetWidth;
+                    statPoints.classList.add('stat-pop-anim');
+                }
+            }
+
             if (qualifiesForArchive) {
                 const defDays = window.defaultArchiveDays || 30;
+                res.style.display = 'block';
                 res.innerHTML = `
-                    ${pointsHeading}${bonusInfoHtml}${synonymsInfoHtml}
                     <div id="test-archive-prompt" style="margin-top:14px; padding:15px; background:var(--bg-card); border-radius:14px; border:2px solid var(--primary); box-shadow:0 4px 10px rgba(0,0,0,0.06);">
                         <div style="font-size:1rem; font-weight:800; color:var(--primary); margin-bottom:4px;">
-                            🎉 Gratulálok! ${window.autoArchiveThreshold}x hibátlanul (szavanként max 1 typo) beírtad!
+                            🎉 Gratulálok! ${window.autoArchiveThreshold}x hibátlanul beírtad!
                         </div>
                         <div style="font-size:0.85rem; color:var(--text-sub); margin-bottom:12px;">
                             A szó elérte az archiválási küszöböt. Hogyan szeretnéd archiválni?
@@ -2752,21 +3586,63 @@
                                     Archiválás ${defDays} napra
                                 </button>
                             </div>
+                            <button type="button" class="btn-secondary" id="btn-test-archive-cancel" onclick="window.cancelTestArchiveChoice()" style="padding:10px; font-size:0.95rem; font-weight:bold; color:var(--text-sub); border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; gap:6px;">
+                                <span>🚫 Ne archiváljuk a szót</span>
+                            </button>
                         </div>
                     </div>`;
 
                 window.openArchiveModalForTest(currentWord.id);
             } else {
-                let txt = `${pointsHeading}${bonusInfoHtml}${synonymsInfoHtml}`;
-                if (window.autoArchiveEnabled) {
-                    if (isWithinTolerance) {
-                        const typoNotice = (totalErrorsObserved > 0 || finalMaxWordError > 0) ? "<br>(Szavanként legfeljebb 1 betűhibát elnéztünk)" : "";
-                        txt += `<br><span style="font-size:0.85rem; color:var(--text-sub); display:block; margin-top:5px;">${currentPerfectStreak} / ${window.autoArchiveThreshold} széria.${typoNotice}</span>`;
-                    } else {
-                        txt += `<br><span style="font-size:0.85rem; color:var(--error); display:block; margin-top:5px;">Mivel valamelyik szóban több mint 1 betűt elrontottál, ez a kör nem számít bele a hibátlan szériába! (0/${window.autoArchiveThreshold})</span>`;
+                if (isWithinTolerance) {
+                    // V23/V23: Helyes válasz esetén NEM jelenítjük meg az alsó dobozt!
+                    res.style.display = 'none';
+                } else {
+                    let txt = '';
+                    if (hintBrokeStreak) {
+                        txt += `
+                        <div style="font-size:0.9rem; color:var(--warning); display:block; margin-top:8px; line-height:1.5;">
+                            <div style="font-weight:bold; margin-bottom:4px;">💡 A 4. javaslat felhasználása miatt a széria nullázódott.</div>
+                            <div style="opacity:0.95;">Ez a kör nem számít bele a hibátlan szériába! (0/${window.autoArchiveThreshold})</div>
+                        </div>`;
+                    } else if (hasTooManyWordErrors) {
+                        const errorDetailsHtml = displayVariants.map((err) => {
+                            const ctx = err.targetWord ? ` (${err.targetWord})` : '';
+                            return `<div>• ${err.index}. hiba${ctx}: <strong>${err.desc}</strong></div>`;
+                        }).join('');
+
+                        txt += `
+                        <div style="font-size:0.9rem; color:var(--error); display:block; margin-top:8px; line-height:1.5;">
+                            <div style="font-weight:bold; margin-bottom:4px;">⚠️ Elírások történtek a beírás során:</div>
+                            ${displayVariants.length > 0 ? `
+                            <div style="margin-left:6px; margin-bottom:5px;">
+                                ${errorDetailsHtml}
+                            </div>` : ''}
+                            <div style="opacity:0.95;">Mivel az egyik szónál 2 elírás történt, a széria nullázódott! (0/${window.autoArchiveThreshold})</div>
+                        </div>`;
+                    } else if (displayVariants.length > 0) {
+                        const errorDetailsHtml = displayVariants.map((err) => {
+                            const ctx = err.targetWord ? ` (${err.targetWord})` : '';
+                            return `<div>• ${err.index}. hiba${ctx}: <strong>${err.desc}</strong></div>`;
+                        }).join('');
+
+                        txt += `
+                        <div style="font-size:0.9rem; color:var(--error); display:block; margin-top:8px; line-height:1.5;">
+                            <div style="font-weight:bold; margin-bottom:4px;">⚠️ Elírások történtek a beírás során:</div>
+                            <div style="margin-left:6px; margin-bottom:5px;">
+                                ${errorDetailsHtml}
+                            </div>
+                            <div style="opacity:0.95;">Ez a kör nem számít bele a hibátlan szériába! (0/${window.autoArchiveThreshold})</div>
+                        </div>`;
                     }
+                    res.innerHTML = txt;
+                    res.style.display = 'block';
                 }
-                res.innerHTML = txt;
+            }
+
+            // Mindig elindítjuk a váltakozó animációt, ha voltak elírások (akár menet közben, akár beküldve)!
+            if (displayVariants && displayVariants.length > 0) {
+                window.startTypoAlternation(displayVariants, rawTargetParts, fullTarget);
             }
         } else {
             const wIdx = allWords.findIndex(w => w.id === currentWord.id);
@@ -2837,13 +3713,57 @@
         if (btnNext) btnNext.focus();
     };
 
+    window.cancelTestArchiveChoice = () => {
+        if (!window.pendingTestArchiveWord) return;
+        const currentWord = window.pendingTestArchiveWord;
+        const wIdx = allWords.findIndex(w => w.id === currentWord.id);
+        if (wIdx > -1) {
+            allWords[wIdx].learned = false;
+            allWords[wIdx].perfectStreak = 0;
+            delete allWords[wIdx].permanent;
+            delete allWords[wIdx].archiveDays;
+            delete allWords[wIdx].archivedAt;
+        }
+
+        updateDoc(doc(db, "words", currentWord.id), {
+            learned: false,
+            perfectStreak: 0,
+            permanent: false,
+            archiveDays: null,
+            archivedAt: null
+        });
+
+        window.closeArchiveModal();
+
+        const promptBox = document.getElementById('test-archive-prompt');
+        if (promptBox) {
+            promptBox.style.borderColor = 'var(--border)';
+            promptBox.innerHTML = `<div style="color:var(--text-main); font-weight:bold; font-size:0.95rem; padding:4px 0;">ℹ️ A szó nem került archiválásra, aktív maradt a gyakorláshoz! 👍</div>`;
+        }
+        window.pendingTestArchiveWord = null;
+        const btnNext = document.getElementById('btn-next');
+        if (btnNext) btnNext.focus();
+    };
+
+    window.cancelArchiveModal = () => {
+        window.closeArchiveModal();
+        if (window.pendingTestArchiveWord) {
+            window.cancelTestArchiveChoice();
+        }
+    };
+
     window.nextTestItem = () => {
+        if (window.stopTypoAlternation) window.stopTypoAlternation();
         if (window.pendingTestArchiveWord && !window.pendingTestArchiveWord.learned) {
             const daysInput = document.getElementById('test-archive-days-input');
             const chosenDays = daysInput ? parseInt(daysInput.value) : window.defaultArchiveDays;
             window.applyTestArchiveChoice(false, chosenDays || window.defaultArchiveDays);
         }
         window.pendingTestArchiveWord = null;
+        window.currentLiveTypoMistakes = [];
+        window.currentActiveMismatches = {};
+        window.currentTestStreakBroken = false;
+        window.testAnswerChecked = false;
         testIndex++;
         window.renderTest();
     };
