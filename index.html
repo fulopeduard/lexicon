@@ -394,7 +394,7 @@
             box-shadow: 0 0 16px rgba(16, 185, 129, 0.6) !important;
         }
 
-        /* --- V26 TEST CONTROLS RESPONSIVE FLEX LAYOUT --- */
+        /* --- V27 TEST CONTROLS RESPONSIVE FLEX LAYOUT --- */
         .test-card {
             background: var(--bg-card);
             padding: 28px 24px;
@@ -577,11 +577,14 @@
             }
             .test-side-controls {
                 order: 1;
+                display: flex !important;
                 flex-direction: row;
                 flex-wrap: wrap;
                 justify-content: center;
+                align-items: center;
                 gap: 8px;
                 width: 100%;
+                margin-bottom: 6px;
             }
             .test-side-controls .test-word-streak-badge,
             .test-side-controls .test-action-btn,
@@ -2070,7 +2073,7 @@
     };
 
     window.openArchiveModalForTest = (id) => {
-        // V26: Teszt során az archiválási opciók közvetlenül a kártyán, a szó helyén jelennek meg (nincs felugró ablak)!
+        // V27: Teszt során az archiválási opciók közvetlenül a kártyán, a szó helyén jelennek meg (nincs felugró ablak)!
     };
 
     window.closeArchiveModal = () => document.getElementById('archive-modal').classList.remove('open');
@@ -2542,6 +2545,7 @@
         }
 
         div.innerHTML = `
+            <p class="test-prompt-label" id="test-prompt-label" style="margin-bottom:8px;">${promptLabel}</p>
             <div class="test-card-top">
                 <div class="test-side-controls" id="test-side-controls">
                     ${streakBadge}
@@ -2556,7 +2560,6 @@
                     <div id="test-overall-streak-badge" class="test-reward-badge badge-overall-streak" style="display:none;" title="Összesített széria"></div>
                 </div>
                 <div class="test-prompt-area" id="test-prompt-area">
-                    <p class="test-prompt-label">${promptLabel}</p>
                     <h2 class="test-word-display">${displayWord}</h2>
                 </div>
             </div>
@@ -2575,7 +2578,7 @@
             input.addEventListener('input', window.updateVisuals);
             input.addEventListener('keypress', e => { if(e.key === 'Enter') window.checkAnswer(); });
 
-            // V26/V26: Helyesen beírt szinonimák törlésének megakadályozása
+            // V27/V27: Helyesen beírt szinonimák törlésének megakadályozása
             input.addEventListener('keydown', (e) => {
                 if (!window.lockedInputPrefix || window.lockedInputPrefix.length === 0) return;
                 const lockLen = window.lockedInputPrefix.length;
@@ -3518,7 +3521,7 @@
 
         document.getElementById('dynamic-display').innerHTML = html;
 
-        // V26/V26: Aktív szó/szinonima és helyesen megoldott szinonimák lezárása
+        // V27/V27: Aktív szó/szinonima és helyesen megoldott szinonimák lezárása
         const rawTargetParts = fullTarget.split(',').map(s => s.trim());
         const isMultiSynonym = rawTargetParts.length > 1;
         let activeTargetIdx = 0;
@@ -3795,7 +3798,7 @@
             res.style.color='var(--success)';
 
             if (isWithinTolerance) {
-                // V26/V26 ÚJDONSÁG:
+                // V27/V27 ÚJDONSÁG:
                 // 1. A szó streak jelvény animációval felmegy (pl. 1-ről 2-re / 3-ra)
                 const wordStreakVal = document.getElementById('test-word-streak-val');
                 const wordStreakBadge = document.getElementById('test-word-streak-badge');
@@ -3851,7 +3854,7 @@
                 const defDays = window.defaultArchiveDays || 30;
                 res.style.display = 'none';
 
-                // V26: Az archiválási opciók ott nyílnak meg, ahol a szó volt (test-prompt-area),
+                // V27: Az archiválási opciók ott nyílnak meg, ahol a szó volt (test-prompt-area),
                 // és NEM ugrik fel modális pop up képernyő! Így ugyanazon a képernyőn maradunk,
                 // és a 3/3 szó-széria, a pontszám és az összesített széria jelvények folyamatosan láthatóak!
                 const promptArea = document.getElementById('test-prompt-area');
@@ -3886,7 +3889,7 @@
                 }
             } else {
                 if (isWithinTolerance) {
-                    // V26/V26: Helyes válasz esetén NEM jelenítjük meg az alsó dobozt!
+                    // V27/V27: Helyes válasz esetén NEM jelenítjük meg az alsó dobozt!
                     res.style.display = 'none';
                 } else {
                     let txt = '';
