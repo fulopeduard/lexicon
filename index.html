@@ -374,22 +374,69 @@
             background: rgba(16, 185, 129, 0.22) !important;
             border-color: var(--success) !important;
         }
+        .test-info-btn {
+            background: rgba(16, 185, 129, 0.12) !important;
+            border-color: var(--success) !important;
+            color: var(--success) !important;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.3) !important;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+        .test-info-btn:hover {
+            background: rgba(16, 185, 129, 0.22) !important;
+            border-color: var(--success) !important;
+            transform: translateY(-1px);
+            box-shadow: 0 0 14px rgba(16, 185, 129, 0.45) !important;
+        }
+        .test-info-btn.info-active {
+            background: rgba(16, 185, 129, 0.3) !important;
+            border-color: var(--success) !important;
+            box-shadow: 0 0 16px rgba(16, 185, 129, 0.6) !important;
+        }
 
-        /* --- V24/V24 TEST CONTROLS UNDER WORD STREAK --- */
-        .test-card-top {
-            position: relative;
+        /* --- V26 TEST CONTROLS RESPONSIVE FLEX LAYOUT --- */
+        .test-card {
+            background: var(--bg-card);
+            padding: 28px 24px;
+            border-radius: var(--radius);
+            text-align: center;
+            border: 1px solid var(--border);
             width: 100%;
-            margin-bottom: 12px;
+            max-width: 530px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .test-card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 14px;
+            width: 100%;
+            margin-bottom: 14px;
+        }
+
+        .test-prompt-area {
+            order: 1;
+            flex: 1 1 0;
+            min-width: 0;
+            min-height: 155px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+            text-align: center;
         }
 
         .test-side-controls {
-            position: absolute;
-            top: 0;
-            right: 0;
+            order: 2;
+            flex: 0 0 auto;
+            position: static;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 9px;
             z-index: 10;
         }
 
@@ -484,14 +531,22 @@
             animation: statPopAnim 0.6s ease-out !important;
         }
 
-        .test-prompt-area {
-            min-height: 155px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 0 64px;
+
+        .test-inline-archive-box {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--bg-card);
+            border-radius: 14px;
+            border: 2px solid var(--primary);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+            animation: modalPop 0.25s ease-out;
+            box-sizing: border-box;
             text-align: center;
+        }
+        @media (max-width: 600px) {
+            .test-inline-archive-box {
+                padding: 8px 8px;
+            }
         }
 
         .test-prompt-label {
@@ -510,24 +565,44 @@
         }
 
         @media (max-width: 600px) {
+            .test-card {
+                padding: 16px 12px;
+                max-width: 100%;
+            }
+            .test-card-top {
+                flex-direction: column;
+                align-items: center;
+                gap: 12px;
+                margin-bottom: 12px;
+            }
             .test-side-controls {
+                order: 1;
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
                 gap: 8px;
+                width: 100%;
             }
             .test-side-controls .test-word-streak-badge,
             .test-side-controls .test-action-btn,
             .test-side-controls .test-mistake-badge,
             .test-side-controls .test-reward-badge {
-                min-width: 48px;
-                height: 33px;
-                font-size: 0.8rem;
-                padding: 4px 8px;
+                min-width: 46px;
+                height: 34px;
+                font-size: 0.82rem;
+                padding: 5px 9px;
             }
             .test-prompt-area {
-                min-height: 145px;
-                padding: 0 54px;
+                order: 2;
+                width: 100%;
+                min-height: 135px;
+                padding: 0;
             }
             .test-word-display {
                 font-size: clamp(1.4rem, 5.5vw, 1.85rem);
+            }
+            .test-inline-archive-box {
+                padding: 10px 8px;
             }
         }
 
@@ -1995,14 +2070,7 @@
     };
 
     window.openArchiveModalForTest = (id) => {
-        const w = allWords.find(x => x.id === id);
-        if(!w) return;
-        document.getElementById('archive-word-id').value = id;
-        const descEl = document.getElementById('archive-modal-desc');
-        if (descEl) descEl.textContent = `🎉 Gratulálok! ${window.autoArchiveThreshold}x hibátlanul beírtad a(z) "${w.word}" szót! Hogyan szeretnéd archiválni?`;
-        document.getElementById('archive-days-input').value = window.defaultArchiveDays || 30;
-        window.updateModalArchiveBtnText(window.defaultArchiveDays || 30);
-        document.getElementById('archive-modal').classList.add('open');
+        // V26: Teszt során az archiválási opciók közvetlenül a kártyán, a szó helyén jelennek meg (nincs felugró ablak)!
     };
 
     window.closeArchiveModal = () => document.getElementById('archive-modal').classList.remove('open');
@@ -2477,6 +2545,7 @@
             <div class="test-card-top">
                 <div class="test-side-controls" id="test-side-controls">
                     ${streakBadge}
+                    <button class="test-action-btn test-info-btn" onclick="window.toggleTestMistakeInfo()" id="btn-test-info" style="display:none;" title="Információ az elírásokról">ℹ️<span style="font-size:0.75rem; font-weight:bold; margin-left:3px;">Info</span></button>
                     <button class="test-action-btn" onclick="window.triggerHint()" id="btn-hint" title="Javaslat (3 ingyenes javaslat maradt a széria megtartásához)">💡<span style="font-size:0.75rem; font-weight:bold; margin-left:3px;">3</span></button>
                     <button class="test-action-btn test-skip-btn" onclick="window.giveUp()" id="btn-giveup" title="Kihagyás / Megoldás (Figyelem: nullázza a szériát!)">⏭️<span style="font-size:0.7rem; margin-left:2px;">💔</span></button>
                     <div id="test-mistake-indicator" class="test-mistake-badge state-safe" title="Engedélyezett elírás: szavanként 1 hiba (2. hiba nullázza a szériát)">
@@ -2486,16 +2555,16 @@
                     <div id="test-earned-points-badge" class="test-reward-badge badge-points" style="display:none;" title="Megszerzett pontok"></div>
                     <div id="test-overall-streak-badge" class="test-reward-badge badge-overall-streak" style="display:none;" title="Összesített széria"></div>
                 </div>
-                <div class="test-prompt-area">
+                <div class="test-prompt-area" id="test-prompt-area">
                     <p class="test-prompt-label">${promptLabel}</p>
                     <h2 class="test-word-display">${displayWord}</h2>
                 </div>
             </div>
             <div id="dynamic-display" class="dynamic-display"></div>
             <input type="text" id="test-input" placeholder="Írd be a választ..." autocomplete="off">
-            <div id="res-box" style="display:none; padding:15px; margin-top:10px; font-weight:bold; background:var(--bg-input); border-radius:12px;"></div>
             <button class="btn-primary" onclick="window.checkAnswer()" id="btn-check" style="margin-top:15px;">Ellenőrzés</button>
-            <button class="btn-secondary hidden" onclick="window.nextTestItem()" id="btn-next" style="width:100%; margin-top:10px;">Tovább</button>`;
+            <button class="btn-secondary hidden" onclick="window.nextTestItem()" id="btn-next" style="width:100%; margin-top:10px;">Tovább</button>
+            <div id="res-box" style="display:none; padding:15px; margin-top:15px; font-weight:bold; background:var(--bg-input); border-radius:12px;"></div>`;
 
         window.lockedInputPrefix = '';
         window.solvedSynonymsList = [];
@@ -2506,7 +2575,7 @@
             input.addEventListener('input', window.updateVisuals);
             input.addEventListener('keypress', e => { if(e.key === 'Enter') window.checkAnswer(); });
 
-            // V24/V24: Helyesen beírt szinonimák törlésének megakadályozása
+            // V26/V26: Helyesen beírt szinonimák törlésének megakadályozása
             input.addEventListener('keydown', (e) => {
                 if (!window.lockedInputPrefix || window.lockedInputPrefix.length === 0) return;
                 const lockLen = window.lockedInputPrefix.length;
@@ -2561,6 +2630,21 @@
         }
         window.updateVisuals();
     };
+
+    window.toggleTestMistakeInfo = () => {
+        const res = document.getElementById('res-box');
+        const infoBtn = document.getElementById('btn-test-info');
+        if (!res) return;
+        if (res.style.display === 'none' || !res.style.display) {
+            res.style.display = 'block';
+            if (infoBtn) infoBtn.classList.add('info-active');
+            res.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+            res.style.display = 'none';
+            if (infoBtn) infoBtn.classList.remove('info-active');
+        }
+    };
+
 
     function getUnfilledIndices() {
         const inputEl = document.getElementById('test-input');
@@ -2698,6 +2782,21 @@
         for(let i=0; i<fullTarget.length; i++) if(!revealedHints.includes(i)) revealedHints.push(i);
         window.updateVisuals();
     };
+
+    window.toggleTestMistakeInfo = () => {
+        const res = document.getElementById('res-box');
+        const infoBtn = document.getElementById('btn-test-info');
+        if (!res) return;
+        if (res.style.display === 'none' || !res.style.display) {
+            res.style.display = 'block';
+            if (infoBtn) infoBtn.classList.add('info-active');
+            res.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+            res.style.display = 'none';
+            if (infoBtn) infoBtn.classList.remove('info-active');
+        }
+    };
+
 
     function getDamerauLevenshteinDistance(source, target) {
         if (!source) return target ? target.length : 0;
@@ -3419,7 +3518,7 @@
 
         document.getElementById('dynamic-display').innerHTML = html;
 
-        // V24/V24: Aktív szó/szinonima és helyesen megoldott szinonimák lezárása
+        // V26/V26: Aktív szó/szinonima és helyesen megoldott szinonimák lezárása
         const rawTargetParts = fullTarget.split(',').map(s => s.trim());
         const isMultiSynonym = rawTargetParts.length > 1;
         let activeTargetIdx = 0;
@@ -3696,7 +3795,7 @@
             res.style.color='var(--success)';
 
             if (isWithinTolerance) {
-                // V24/V24 ÚJDONSÁG:
+                // V26/V26 ÚJDONSÁG:
                 // 1. A szó streak jelvény animációval felmegy (pl. 1-ről 2-re / 3-ra)
                 const wordStreakVal = document.getElementById('test-word-streak-val');
                 const wordStreakBadge = document.getElementById('test-word-streak-badge');
@@ -3750,39 +3849,44 @@
 
             if (qualifiesForArchive) {
                 const defDays = window.defaultArchiveDays || 30;
-                res.style.display = 'block';
-                res.innerHTML = `
-                    <div id="test-archive-prompt" style="margin-top:14px; padding:15px; background:var(--bg-card); border-radius:14px; border:2px solid var(--primary); box-shadow:0 4px 10px rgba(0,0,0,0.06);">
-                        <div style="font-size:1rem; font-weight:800; color:var(--primary); margin-bottom:4px;">
-                            🎉 Gratulálok! ${window.autoArchiveThreshold}x hibátlanul beírtad!
-                        </div>
-                        <div style="font-size:0.85rem; color:var(--text-sub); margin-bottom:12px;">
-                            A szó elérte az archiválási küszöböt. Hogyan szeretnéd archiválni?
-                        </div>
-                        <div style="display:flex; flex-direction:column; gap:10px;">
-                            <button type="button" class="btn-primary" onclick="window.applyTestArchiveChoice(true)" style="background:var(--success); padding:10px; font-size:0.95rem; display:flex; align-items:center; justify-content:center; gap:8px;">
-                                <span>📌 Végleges archiválás</span>
-                            </button>
-                            <div style="display:flex; gap:8px; align-items:center;">
-                                <div style="display:flex; align-items:center; gap:6px; background:var(--bg-input); padding:6px 10px; border-radius:12px; border:1px solid var(--border);">
-                                    <span style="font-size:0.85rem; font-weight:600;">⏳</span>
-                                    <input type="number" id="test-archive-days-input" min="1" max="365" value="${defDays}" style="width:55px; padding:4px; margin:0; text-align:center; font-weight:bold; font-size:0.9rem;" oninput="window.updateTestArchiveBtnText(this.value)">
-                                    <span style="font-size:0.85rem; color:var(--text-sub);">nap</span>
+                res.style.display = 'none';
+
+                // V26: Az archiválási opciók ott nyílnak meg, ahol a szó volt (test-prompt-area),
+                // és NEM ugrik fel modális pop up képernyő! Így ugyanazon a képernyőn maradunk,
+                // és a 3/3 szó-széria, a pontszám és az összesített széria jelvények folyamatosan láthatóak!
+                const promptArea = document.getElementById('test-prompt-area');
+                if (promptArea) {
+                    promptArea.innerHTML = `
+                        <div id="test-archive-prompt" class="test-inline-archive-box">
+                            <div style="font-size:0.92rem; font-weight:800; color:var(--primary); margin-bottom:3px;">
+                                🎉 Gratulálok! ${window.autoArchiveThreshold}x hibátlanul beírtad!
+                            </div>
+                            <div style="font-size:0.82rem; color:var(--text-sub); margin-bottom:8px;">
+                                Archiválási opciók a(z) "<strong>${currentWord.word}</strong>" szóhoz:
+                            </div>
+                            <div style="display:flex; flex-direction:column; gap:6px; width:100%; max-width:320px; margin:0 auto;">
+                                <button type="button" class="btn-primary" onclick="window.applyTestArchiveChoice(true)" style="background:var(--success); padding:7px 12px; font-size:0.86rem; display:flex; align-items:center; justify-content:center; gap:6px; border-radius:10px;">
+                                    <span>📌 Végleges archiválás</span>
+                                </button>
+                                <div style="display:flex; gap:6px; align-items:center;">
+                                    <div style="display:flex; align-items:center; gap:3px; background:var(--bg-input); padding:5px 7px; border-radius:10px; border:1px solid var(--border); flex-shrink:0;">
+                                        <span style="font-size:0.75rem;">⏳</span>
+                                        <input type="number" id="test-archive-days-input" min="1" max="365" value="${defDays}" style="width:40px; padding:2px; margin:0; text-align:center; font-weight:bold; font-size:0.85rem;" oninput="window.updateTestArchiveBtnText(this.value)">
+                                        <span style="font-size:0.75rem; color:var(--text-sub);">nap</span>
+                                    </div>
+                                    <button type="button" class="btn-secondary" id="btn-test-archive-temp" onclick="window.applyTestArchiveChoice(false)" style="flex:1; min-width:0; padding:7px 8px; font-size:0.84rem; font-weight:bold; border-radius:10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                        Archiválás ${defDays} napra
+                                    </button>
                                 </div>
-                                <button type="button" class="btn-secondary" id="btn-test-archive-temp" onclick="window.applyTestArchiveChoice(false)" style="flex:1; padding:10px; font-size:0.95rem; font-weight:bold;">
-                                    Archiválás ${defDays} napra
+                                <button type="button" class="btn-secondary" id="btn-test-archive-cancel" onclick="window.cancelTestArchiveChoice()" style="padding:6px 10px; font-size:0.82rem; font-weight:bold; color:var(--text-sub); border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; gap:4px; border-radius:10px;">
+                                    <span>🚫 Ne archiváljuk a szót</span>
                                 </button>
                             </div>
-                            <button type="button" class="btn-secondary" id="btn-test-archive-cancel" onclick="window.cancelTestArchiveChoice()" style="padding:10px; font-size:0.95rem; font-weight:bold; color:var(--text-sub); border:1px dashed var(--border); display:flex; align-items:center; justify-content:center; gap:6px;">
-                                <span>🚫 Ne archiváljuk a szót</span>
-                            </button>
-                        </div>
-                    </div>`;
-
-                window.openArchiveModalForTest(currentWord.id);
+                        </div>`;
+                }
             } else {
                 if (isWithinTolerance) {
-                    // V24/V24: Helyes válasz esetén NEM jelenítjük meg az alsó dobozt!
+                    // V26/V26: Helyes válasz esetén NEM jelenítjük meg az alsó dobozt!
                     res.style.display = 'none';
                 } else {
                     let txt = '';
@@ -3831,7 +3935,18 @@
                         </div>`;
                     }
                     res.innerHTML = txt;
-                    res.style.display = 'block';
+                    // V25: A magyarázat alapjáraton hidden!
+                    res.style.display = 'none';
+                }
+            }
+
+            // V25: Ha történtek elírások vagy széria-törés, megjelenítjük a zöld kiemelt információ gombot a streak gomb alatt!
+            const infoBtn = document.getElementById('btn-test-info');
+            if (infoBtn) {
+                if ((displayVariants && displayVariants.length > 0) || hasTooManyWordErrors || hintBrokeStreak) {
+                    infoBtn.style.display = 'inline-flex';
+                } else {
+                    infoBtn.style.display = 'none';
                 }
             }
 
