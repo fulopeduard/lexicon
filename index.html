@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lexicon Aura v6</title>
+    <title>Lexicon Aura v7</title>
     <style>
         /* --- TÉMÁK ÉS VÁLTOZÓK --- */
         :root {
@@ -567,7 +567,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, writeBatch, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -607,6 +607,8 @@
     let userMaxStreak = 0;
     
     window.currentTestErrorCount = 0; 
+    let isLearnGridView = localStorage.getItem('learn_grid_view') !== 'false';
+    window.isDeeplPopup = localStorage.getItem('deepl_popup') !== 'false';
     window.autoArchiveEnabled = localStorage.getItem('auto_archive_enabled') === 'true';
     window.showStreakInTest = localStorage.getItem('show_streak_in_test') === 'true'; 
     window.autoArchiveThreshold = parseInt(localStorage.getItem('auto_archive_threshold')) || 3;
@@ -614,11 +616,71 @@
     window.autoRestoreDays = parseInt(localStorage.getItem('auto_restore_days')) || 30;
     window.testModeReverse = localStorage.getItem('test_mode_reverse') === 'true';
 
-    document.getElementById('set-auto-archive').checked = window.autoArchiveEnabled;
-    document.getElementById('set-show-streak-test').checked = window.showStreakInTest; 
-    document.getElementById('set-archive-threshold').value = window.autoArchiveThreshold;
-    document.getElementById('set-auto-restore').checked = window.autoRestoreEnabled;
-    document.getElementById('set-restore-days').value = window.autoRestoreDays;
+    function applyTheme(theme) {
+        const isDark = theme !== 'light';
+        document.body.classList.toggle('dark-mode', isDark);
+        localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        const btn = document.getElementById('modal-theme-btn');
+        if (btn) btn.textContent = isDark ? '☀️ Világos mód' : '🌙 Sötét mód';
+    }
+
+    window.updateViewBtnText = () => {
+        const btn = document.getElementById('modal-view-btn');
+        if (btn) btn.textContent = isLearnGridView ? '🔳 Egyes nézet (Fókuszált)' : '🔲 Rács nézet (Összes)';
+    };
+
+    window.updateDeeplBtnText = () => {
+        const btn = document.getElementById('modal-deepl-btn');
+        if (btn) btn.textContent = window.isDeeplPopup ? '🌐 DeepL: Felugró ablak' : '🌐 DeepL: Új lap (Tab)';
+    };
+
+    function syncSettingsInputsToUI() {
+        const autoArch = document.getElementById('set-auto-archive');
+        if (autoArch) autoArch.checked = window.autoArchiveEnabled;
+        const showStreak = document.getElementById('set-show-streak-test');
+        if (showStreak) showStreak.checked = window.showStreakInTest;
+        const archThresh = document.getElementById('set-archive-threshold');
+        if (archThresh) archThresh.value = window.autoArchiveThreshold;
+        const autoRest = document.getElementById('set-auto-restore');
+        if (autoRest) autoRest.checked = window.autoRestoreEnabled;
+        const restDays = document.getElementById('set-restore-days');
+        if (restDays) restDays.value = window.autoRestoreDays;
+        window.updateViewBtnText();
+        window.updateDeeplBtnText();
+    }
+
+    // Inicializáljuk a UI elemeket
+    syncSettingsInputsToUI();
+    applyTheme(localStorage.getItem('theme') || 'dark');
+
+    function getSettingsPayload() {
+        return {
+            autoArchiveEnabled: Boolean(window.autoArchiveEnabled),
+            showStreakInTest: Boolean(window.showStreakInTest),
+            autoArchiveThreshold: parseInt(window.autoArchiveThreshold) || 3,
+            autoRestoreEnabled: Boolean(window.autoRestoreEnabled),
+            autoRestoreDays: parseInt(window.autoRestoreDays) || 30,
+            testModeReverse: Boolean(window.testModeReverse),
+            learnGridView: Boolean(isLearnGridView),
+            deeplPopup: Boolean(window.isDeeplPopup),
+            theme: document.body.classList.contains('dark-mode') ? 'dark' : 'light',
+            lastUsedLang: localStorage.getItem('last_used_lang') || ''
+        };
+    }
+
+    async function saveSettingsToDB() {
+        if (!currentUser) return;
+        const settings = getSettingsPayload();
+        try {
+            await setDoc(doc(db, "users", currentUser.uid), {
+                settings: settings,
+                settingsUpdatedAt: Date.now()
+            }, { merge: true });
+        } catch (e) {
+            console.error("Hiba a beállítások mentésekor Firestore-ba:", e);
+        }
+    }
+    window.saveSettingsToDB = saveSettingsToDB;
 
     window.saveDetailedSettings = () => {
         window.autoArchiveEnabled = document.getElementById('set-auto-archive').checked;
@@ -632,12 +694,15 @@
         localStorage.setItem('auto_archive_threshold', window.autoArchiveThreshold);
         localStorage.setItem('auto_restore_enabled', window.autoRestoreEnabled);
         localStorage.setItem('auto_restore_days', window.autoRestoreDays);
+
+        saveSettingsToDB();
     };
 
     window.toggleTestDirection = () => {
         window.testModeReverse = !window.testModeReverse;
         localStorage.setItem('test_mode_reverse', window.testModeReverse);
         window.initTest();
+        saveSettingsToDB();
     };
 
     window.toggleAuthMode = (mode) => {
@@ -665,7 +730,7 @@
 
     window.handleLogout = () => { signOut(auth); location.reload(); };
 
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
         document.getElementById('loading-screen').style.display = 'none';
         if (user) {
             currentUser = user;
@@ -673,7 +738,7 @@
             document.getElementById('app-container').classList.add('active');
             document.querySelector('.stats-bar').style.display = 'flex';
             document.body.style.justifyContent = 'flex-start';
-            loadStats();
+            await loadUserStatsAndSettings();
             fetchWords();
             window.switchTab('learn');
         } else {
@@ -686,24 +751,116 @@
         }
     });
 
-    function loadStats() {
+    async function loadUserStatsAndSettings() {
         if(!currentUser) return;
+
+        // 1. Gyors betöltés localStorage-ból
         const saved = localStorage.getItem(`lexicon_stats_${currentUser.uid}`);
         if(saved) {
-            const p = JSON.parse(saved);
-            userPoints = p.points || 0;
-            userStreak = p.streak || 0;
-            userMaxStreak = p.maxStreak || 0;
+            try {
+                const p = JSON.parse(saved);
+                userPoints = p.points || 0;
+                userStreak = p.streak || 0;
+                userMaxStreak = p.maxStreak || 0;
+            } catch(e) {}
         } else {
             userPoints = 0; userStreak = 0; userMaxStreak = 0;
         }
         updateStatsUI();
-    }
 
-    function saveStats() {
+        // 2. Betöltés Firestore adatbázisból
+        try {
+            const userDocRef = doc(db, "users", currentUser.uid);
+            const userSnap = await getDoc(userDocRef);
+
+            if (userSnap.exists()) {
+                const data = userSnap.data();
+
+                if (data.points !== undefined) userPoints = Number(data.points) || 0;
+                if (data.streak !== undefined) userStreak = Number(data.streak) || 0;
+                if (data.maxStreak !== undefined) userMaxStreak = Number(data.maxStreak) || 0;
+
+                localStorage.setItem(`lexicon_stats_${currentUser.uid}`, JSON.stringify({
+                    points: userPoints,
+                    streak: userStreak,
+                    maxStreak: userMaxStreak
+                }));
+                updateStatsUI();
+
+                if (data.settings) {
+                    const s = data.settings;
+                    if (s.autoArchiveEnabled !== undefined) {
+                        window.autoArchiveEnabled = !!s.autoArchiveEnabled;
+                        localStorage.setItem('auto_archive_enabled', window.autoArchiveEnabled);
+                    }
+                    if (s.showStreakInTest !== undefined) {
+                        window.showStreakInTest = !!s.showStreakInTest;
+                        localStorage.setItem('show_streak_in_test', window.showStreakInTest);
+                    }
+                    if (s.autoArchiveThreshold !== undefined) {
+                        window.autoArchiveThreshold = parseInt(s.autoArchiveThreshold) || 3;
+                        localStorage.setItem('auto_archive_threshold', window.autoArchiveThreshold);
+                    }
+                    if (s.autoRestoreEnabled !== undefined) {
+                        window.autoRestoreEnabled = !!s.autoRestoreEnabled;
+                        localStorage.setItem('auto_restore_enabled', window.autoRestoreEnabled);
+                    }
+                    if (s.autoRestoreDays !== undefined) {
+                        window.autoRestoreDays = parseInt(s.autoRestoreDays) || 30;
+                        localStorage.setItem('auto_restore_days', window.autoRestoreDays);
+                    }
+                    if (s.testModeReverse !== undefined) {
+                        window.testModeReverse = !!s.testModeReverse;
+                        localStorage.setItem('test_mode_reverse', window.testModeReverse);
+                    }
+                    if (s.learnGridView !== undefined) {
+                        isLearnGridView = !!s.learnGridView;
+                        localStorage.setItem('learn_grid_view', isLearnGridView);
+                    }
+                    if (s.deeplPopup !== undefined) {
+                        window.isDeeplPopup = !!s.deeplPopup;
+                        localStorage.setItem('deepl_popup', window.isDeeplPopup);
+                    }
+                    if (s.theme !== undefined) {
+                        applyTheme(s.theme);
+                    }
+                    if (s.lastUsedLang !== undefined && s.lastUsedLang) {
+                        localStorage.setItem('last_used_lang', s.lastUsedLang);
+                    }
+
+                    syncSettingsInputsToUI();
+                } else {
+                    await saveSettingsToDB();
+                }
+            } else {
+                await setDoc(userDocRef, {
+                    points: userPoints,
+                    streak: userStreak,
+                    maxStreak: userMaxStreak,
+                    settings: getSettingsPayload(),
+                    createdAt: Date.now()
+                }, { merge: true });
+            }
+        } catch (e) {
+            console.error("Hiba a statisztikák és beállítások betöltésekor Firestore-ból:", e);
+        }
+    }
+    window.loadStats = loadUserStatsAndSettings;
+
+    async function saveStats() {
         if(!currentUser) return;
         localStorage.setItem(`lexicon_stats_${currentUser.uid}`, JSON.stringify({ points: userPoints, streak: userStreak, maxStreak: userMaxStreak }));
         updateStatsUI();
+        try {
+            await setDoc(doc(db, "users", currentUser.uid), {
+                points: userPoints,
+                streak: userStreak,
+                maxStreak: userMaxStreak,
+                statsUpdatedAt: Date.now()
+            }, { merge: true });
+        } catch(err) {
+            console.error("Hiba a statisztikák mentésekor Firestore-ba:", err);
+        }
     }
 
     function updateStatsUI() {
@@ -1123,6 +1280,10 @@
             input.focus();
         } else {
             input.style.display = 'none';
+            if (select.value) {
+                localStorage.setItem('last_used_lang', select.value);
+                saveSettingsToDB();
+            }
         }
     };
 
@@ -1130,7 +1291,10 @@
         const select = document.getElementById('new-lang-select');
         const input = document.getElementById('new-lang-input');
         let lang = select.value === 'new' ? input.value.trim() : select.value;
-        if (lang) localStorage.setItem('last_used_lang', lang);
+        if (lang) {
+            localStorage.setItem('last_used_lang', lang);
+            saveSettingsToDB();
+        }
         return lang;
     }
 
@@ -1710,20 +1874,19 @@
     window.openSettingsModal = () => document.getElementById('settings-modal').classList.add('open');
     window.closeSettingsModal = () => document.getElementById('settings-modal').classList.remove('open');
 
-    let isLearnGridView = localStorage.getItem('learn_grid_view') !== 'false';
-    window.isDeeplPopup = localStorage.getItem('deepl_popup') !== 'false';
-
     window.toggleLearnViewMode = () => {
         isLearnGridView = !isLearnGridView;
         localStorage.setItem('learn_grid_view', isLearnGridView);
         window.updateViewBtnText(); 
         window.filterAndRenderCards();
         if(window.currentDatabaseFolderId) window.renderFolderWords();
+        saveSettingsToDB();
     };
     window.toggleDeeplPopup = () => {
         window.isDeeplPopup = !window.isDeeplPopup;
         localStorage.setItem('deepl_popup', window.isDeeplPopup);
         window.updateDeeplBtnText();
+        saveSettingsToDB();
     };
     window.updateViewBtnText = () => {
         const btn = document.getElementById('modal-view-btn');
@@ -1745,21 +1908,10 @@
     };
 
     window.toggleTheme = () => {
-        const body = document.body; body.classList.toggle('dark-mode');
-        const isDark = body.classList.contains('dark-mode');
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
-        const btn = document.getElementById('modal-theme-btn');
-        if (btn) btn.textContent = isDark ? '☀️ Világos mód' : '🌙 Sötét mód';
+        const isCurrentlyDark = document.body.classList.contains('dark-mode');
+        applyTheme(isCurrentlyDark ? 'light' : 'dark');
+        saveSettingsToDB();
     };
-
-    if (localStorage.getItem('theme') === 'light') {
-        document.body.classList.remove('dark-mode');
-        if (document.getElementById('modal-theme-btn')) document.getElementById('modal-theme-btn').textContent = '🌙 Sötét mód';
-    } else {
-        document.body.classList.add('dark-mode');
-        localStorage.setItem('theme', 'dark');
-    }
-    window.updateViewBtnText(); window.updateDeeplBtnText();
 
     window.initTest = () => {
         const langEl = document.getElementById('test-lang-select');
