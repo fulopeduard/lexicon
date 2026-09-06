@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lexicon Aura v7</title>
+    <title>Lexicon Aura v8</title>
     <style>
         /* --- TÉMÁK ÉS VÁLTOZÓK --- */
         :root {
@@ -2179,35 +2179,58 @@
     };
 
     window.checkAnswer = () => {
-        const inputVal = document.getElementById('test-input').value.trim().toLowerCase();
+        const inputEl = document.getElementById('test-input');
+        const inputVal = inputEl ? inputEl.value.trim().toLowerCase() : '';
         const fullTarget = window.testModeReverse ? testList[testIndex].word : testList[testIndex].meaning;
-        const userParts = inputVal.split(',').map(s => s.trim()).filter(s => s.length > 0);
+        const userParts = inputVal.split(',').map(s => s.trim().toLowerCase()).filter(s => s.length > 0);
         const targetParts = fullTarget.split(',').map(s => s.trim().toLowerCase());
 
-        let correctCount = 0;
+        const matchedTargetIndices = new Set();
         userParts.forEach(u => {
-            const match = targetParts.some(t => t === u || (t.includes(u) && u.length > 2));
-            if(match) correctCount++;
+            for (let i = 0; i < targetParts.length; i++) {
+                if (!matchedTargetIndices.has(i)) {
+                    const t = targetParts[i];
+                    if (t === u || (t.includes(u) && u.length > 2) || (u.includes(t) && t.length > 2)) {
+                        matchedTargetIndices.add(i);
+                        break;
+                    }
+                }
+            }
         });
+        const correctCount = matchedTargetIndices.size;
         const isSuccess = correctCount >= 1;
 
         const res = document.getElementById('res-box');
-        document.getElementById('test-input').disabled=true;
-        document.getElementById('btn-check').style.display='none';
-        document.getElementById('btn-hint').style.display='none';
-        document.getElementById('btn-giveup').style.display='none';
+        if (inputEl) inputEl.disabled = true;
+        document.getElementById('btn-check').style.display = 'none';
+        document.getElementById('btn-hint').style.display = 'none';
+        document.getElementById('btn-giveup').style.display = 'none';
         document.getElementById('btn-next').classList.remove('hidden');
         document.getElementById('btn-next').focus();
-        res.style.display='block';
+        res.style.display = 'block';
         
         let currentWord = testList[testIndex];
         
         if(isSuccess) {
-            userPoints += 50; userStreak += 1;
+            // Pontszámítás: 50 alapértelmezett pont + minden további helyes szinonimáért +25 pont
+            const bonusWords = Math.max(0, correctCount - 1);
+            const bonusPoints = bonusWords * 25;
+            const earnedPoints = 50 + bonusPoints;
+
+            userPoints += earnedPoints; 
+            userStreak += 1;
             if(userStreak > userMaxStreak) userMaxStreak = userStreak;
             saveStats();
 
             let isWithinTolerance = window.currentTestErrorCount <= 1; 
+
+            // Ha több szinonima volt megadva, vagy csak egy részét adtuk meg, töltsük ki az összes szót láthatóan
+            if (inputEl) inputEl.value = fullTarget;
+            for(let i = 0; i < fullTarget.length; i++) {
+                if(!revealedHints.includes(i)) revealedHints.push(i);
+            }
+            window.updateVisuals();
+
             let justArchived = false;
             let justExtended = false;
             let currentPerfectStreak = (currentWord.perfectStreak || 0);
@@ -2217,7 +2240,6 @@
             if (window.autoArchiveEnabled && isWithinTolerance) {
                 currentPerfectStreak += 1;
                 if (currentPerfectStreak >= window.autoArchiveThreshold) {
-                    
                     let newArchiveDays = window.autoRestoreDays;
                     
                     if (wasAlreadyLearned && !isPerm) {
@@ -2256,16 +2278,22 @@
                 updateDoc(doc(db, "words", currentWord.id), { perfectStreak: 0 });
             }
 
+            let pointsHeading = `Helyes! ✅ +${earnedPoints} Pont`;
+            let bonusInfoHtml = bonusWords > 0 
+                ? `<div style="font-size:0.9rem; color:var(--accent); margin-top:4px; font-weight:600;">🌟 +${bonusPoints} bónusz pont a ${bonusWords} plusz helyes szinonimáért!</div>` 
+                : '';
+            let synonymsInfoHtml = (targetParts.length > 1)
+                ? `<div style="font-size:0.9rem; color:var(--text-sub); margin-top:8px; padding-top:8px; border-top:1px solid var(--border);">📝 Teljes kifejezés / összes szinonima: <strong style="color:var(--text-main);">${fullTarget}</strong></div>`
+                : '';
+
+            res.style.color='var(--success)';
             if (justArchived) {
-                res.style.color='var(--success)'; 
-                res.innerHTML=`Helyes! ✅ +50 Pont<br><br><span style="font-size:1rem; color:var(--primary);">🎉 Gratulálok! ${window.autoArchiveThreshold}x hibátlanul (max 1 typo) beírtad, így archiváltuk!</span>`;
+                res.innerHTML = `${pointsHeading}${bonusInfoHtml}${synonymsInfoHtml}<br><span style="font-size:1rem; color:var(--primary);">🎉 Gratulálok! ${window.autoArchiveThreshold}x hibátlanul (max 1 typo) beírtad, így archiváltuk!</span>`;
             } else if (justExtended) {
-                res.style.color='var(--success)'; 
                 const extendText = window.autoRestoreEnabled ? `az archívumban meghosszabbítva ${window.autoRestoreDays} nappal! (Így összesen ${currentWord.tempNewArchiveDays} napod maradt a következő ismétlésig)` : "megerősítve az archívumban!";
-                res.innerHTML=`Helyes! ✅ +50 Pont<br><br><span style="font-size:1rem; color:var(--primary);">🎉 Gratulálok! ${window.autoArchiveThreshold}x hibátlanul (max 1 typo) beírtad, így a szó ideje ${extendText}</span>`;
+                res.innerHTML = `${pointsHeading}${bonusInfoHtml}${synonymsInfoHtml}<br><span style="font-size:1rem; color:var(--primary);">🎉 Gratulálok! ${window.autoArchiveThreshold}x hibátlanul (max 1 typo) beírtad, így a szó ideje ${extendText}</span>`;
             } else {
-                res.style.color='var(--success)'; 
-                let txt = `Helyes! ✅ +50 Pont`;
+                let txt = `${pointsHeading}${bonusInfoHtml}${synonymsInfoHtml}`;
                 if (window.autoArchiveEnabled) {
                     if (isWithinTolerance) {
                         const typoNotice = window.currentTestErrorCount === 1 ? "<br>(Egy betűhibát elnéztünk)" : "";
