@@ -322,9 +322,26 @@
         }
         .char-correct { color: var(--success); font-weight: bold; border-bottom: 2px solid var(--success); }
         .char-wrong { color: var(--error); font-weight: bold; border-bottom: 2px solid var(--error); }
+        .char-wrong-warn { color: var(--warning); font-weight: bold; border-bottom: 2px solid var(--warning); }
         .char-placeholder { color: var(--border); }
         .char-hint { opacity: 0.5; }
         .char-mistake-wrong {
+            color: var(--error) !important;
+            font-weight: 900 !important;
+            border-bottom: 2.5px solid var(--error) !important;
+            text-decoration: underline !important;
+            text-decoration-color: var(--error) !important;
+            text-decoration-thickness: 2px !important;
+        }
+        .char-mistake-warn {
+            color: var(--warning) !important;
+            font-weight: 900 !important;
+            border-bottom: 2.5px solid var(--warning) !important;
+            text-decoration: underline !important;
+            text-decoration-color: var(--warning) !important;
+            text-decoration-thickness: 2px !important;
+        }
+        .char-mistake-danger {
             color: var(--error) !important;
             font-weight: 900 !important;
             border-bottom: 2.5px solid var(--error) !important;
@@ -358,7 +375,7 @@
             border-color: var(--success) !important;
         }
 
-        /* --- V23/V23 TEST CONTROLS UNDER WORD STREAK --- */
+        /* --- V24/V24 TEST CONTROLS UNDER WORD STREAK --- */
         .test-card-top {
             position: relative;
             width: 100%;
@@ -2489,7 +2506,7 @@
             input.addEventListener('input', window.updateVisuals);
             input.addEventListener('keypress', e => { if(e.key === 'Enter') window.checkAnswer(); });
 
-            // V23/V23: Helyesen beírt szinonimák törlésének megakadályozása
+            // V24/V24: Helyesen beírt szinonimák törlésének megakadályozása
             input.addEventListener('keydown', (e) => {
                 if (!window.lockedInputPrefix || window.lockedInputPrefix.length === 0) return;
                 const lockLen = window.lockedInputPrefix.length;
@@ -3031,7 +3048,11 @@
                 for (let k = 0; k < wordStr.length; k++) {
                     const c = wordStr[k];
                     const isWrong = isTargetWord && highlightIndices.includes(k);
-                    const spanClass = isWrong ? 'char-wrong char-mistake-wrong' : 'char-correct';
+                    let spanClass = 'char-correct';
+                    if (isWrong) {
+                        const isDanger = variant && (variant.wordMistakeCount >= 2);
+                        spanClass = isDanger ? 'char-wrong char-mistake-danger' : 'char-mistake-warn';
+                    }
                     charSlots.push(`
                         <div class="char-slot">
                             <span class="char-box"><span class="${spanClass}">${c === ' ' ? '&nbsp;' : c}</span></span>
@@ -3059,7 +3080,12 @@
             if (inputEl) inputEl.value = fullTarget;
         } else {
             const wordCtx = variant.targetWord ? ` (${variant.targetWord})` : '';
-            badgeHtml = `<span style="color:var(--error); background:rgba(239,68,68,0.12); padding:4px 12px; border-radius:12px; border:1px solid rgba(239,68,68,0.25);">⚠️ ${variant.index}. hiba${wordCtx}: <u>${variant.desc}</u></span>`;
+            const isDanger = variant && (variant.wordMistakeCount >= 2);
+            if (isDanger) {
+                badgeHtml = `<span style="color:var(--error); background:rgba(239,68,68,0.12); padding:4px 12px; border-radius:12px; border:1px solid rgba(239,68,68,0.25);">❌ ${variant.index}. hiba${wordCtx}: <u>${variant.desc}</u> <span style="font-size:0.75rem; opacity:0.85;">(2 elírás - széria nullázva)</span></span>`;
+            } else {
+                badgeHtml = `<span style="color:var(--warning); background:rgba(245,158,11,0.12); padding:4px 12px; border-radius:12px; border:1px solid rgba(245,158,11,0.25);">⚠️ ${variant.index}. elírás${wordCtx}: <u>${variant.desc}</u> <span style="font-size:0.75rem; opacity:0.85;">(1 elírás - megengedett)</span></span>`;
+            }
             if (inputEl) inputEl.value = variant.fullVariantText;
         }
 
@@ -3071,15 +3097,10 @@
         if (!variants || !variants.length) return;
 
         const steps = [];
-        if (variants.length === 1) {
-            steps.push({ variant: null, ms: 1500 });
-            steps.push({ variant: variants[0], ms: 1600 });
-        } else {
-            steps.push({ variant: null, ms: 1500 });
-            steps.push({ variant: variants[0], ms: 1600 });
-            steps.push({ variant: null, ms: 1200 });
-            steps.push({ variant: variants[1], ms: 1600 });
-        }
+        variants.forEach((v, idx) => {
+            steps.push({ variant: null, ms: idx === 0 ? 1500 : 1200 });
+            steps.push({ variant: v, ms: 1600 });
+        });
 
         window.currentTypoSteps = steps;
         let stepIndex = 0;
@@ -3316,9 +3337,19 @@
             if(uText && charInUserText < uText.length) {
                 const uChar = uText[charInUserText];
                 const isMatch = uChar.toLowerCase() === char.toLowerCase();
-                displayHTML = `<span class="${isMatch ? 'char-correct' : (revealedHints.includes(i) ? 'char-hint' : 'char-wrong')}">${isMatch ? (uChar === ' ' ? '&nbsp;' : uChar) : (revealedHints.includes(i) ? char : (uChar === ' ' ? '&nbsp;' : uChar))}</span>`;
+                const currentWordKey = `${currentTargetIdx}_${currentWordIdxInPart}`;
+                const wordTypoCount = (window.currentLiveTypoMistakes || []).filter(m => `${m.partIdx}_${m.wordIdx}` === currentWordKey).length;
+                let charClass = 'char-placeholder';
+                if (isMatch) {
+                    charClass = 'char-correct';
+                } else if (revealedHints.includes(i)) {
+                    charClass = 'char-hint';
+                } else {
+                    charClass = (wordTypoCount >= 1) ? 'char-wrong' : 'char-wrong-warn';
+                }
+                displayHTML = `<span class="${charClass}">${isMatch ? (uChar === ' ' ? '&nbsp;' : uChar) : (revealedHints.includes(i) ? char : (uChar === ' ' ? '&nbsp;' : uChar))}</span>`;
 
-                // Valós idejű elírások rögzítése a beírás során (V19)
+                // Valós idejű elírások rögzítése a beírás során (V19/V24: mindegyik szónál megjegyez 2 hibát)
                 if (!isMatch && !revealedHints.includes(i) && !window.testAnswerChecked && uChar && uChar.trim().length > 0) {
                     if (!window.currentLiveTypoMistakes) window.currentLiveTypoMistakes = [];
                     const charIdx0 = wordCharIndex - 1;
@@ -3327,41 +3358,44 @@
 
                     const wasActive = window.currentActiveMismatches && (window.currentActiveMismatches[slotKey] === uChar.toLowerCase());
                     if (!wasActive) {
-                        const rawTargetParts = fullTarget.split(',').map(s => s.trim());
-                        const partWords = (rawTargetParts[currentTargetIdx] || fullTarget).split(/\s+/).filter(Boolean);
-                        const origWord = partWords[currentWordIdxInPart] || char;
+                        const existingWordMistakes = window.currentLiveTypoMistakes.filter(m => `${m.partIdx}_${m.wordIdx}` === currentWordKey);
+                        if (existingWordMistakes.length < 2) {
+                            const rawTargetParts = fullTarget.split(',').map(s => s.trim());
+                            const partWords = (rawTargetParts[currentTargetIdx] || fullTarget).split(/\s+/).filter(Boolean);
+                            const origWord = partWords[currentWordIdxInPart] || char;
 
-                        const wChars = Array.from(origWord);
-                        const dispUChar = (charIdx0 < wChars.length && wChars[charIdx0] === wChars[charIdx0].toUpperCase() && wChars[charIdx0] !== wChars[charIdx0].toLowerCase())
-                            ? uChar.toUpperCase()
-                            : uChar.toLowerCase();
-                        if (charIdx0 < wChars.length) {
-                            wChars[charIdx0] = dispUChar;
-                        } else {
-                            wChars.push(dispUChar);
+                            const wChars = Array.from(origWord);
+                            const dispUChar = (charIdx0 < wChars.length && wChars[charIdx0] === wChars[charIdx0].toUpperCase() && wChars[charIdx0] !== wChars[charIdx0].toLowerCase())
+                                ? uChar.toUpperCase()
+                                : uChar.toLowerCase();
+                            if (charIdx0 < wChars.length) {
+                                wChars[charIdx0] = dispUChar;
+                            } else {
+                                wChars.push(dispUChar);
+                            }
+                            const highlightWord = wChars.join('');
+
+                            const newTargetParts = rawTargetParts.map(t => t.trim().split(/\s+/));
+                            if (newTargetParts[currentTargetIdx] && newTargetParts[currentTargetIdx][currentWordIdxInPart]) {
+                                newTargetParts[currentTargetIdx][currentWordIdxInPart] = highlightWord;
+                            }
+                            const fullVariantText = newTargetParts.map(parts => parts.join(' ')).join(', ');
+
+                            window.currentLiveTypoMistakes.push({
+                                id: window.currentLiveTypoMistakes.length + 1,
+                                slotKey: slotKey,
+                                partIdx: currentTargetIdx,
+                                wordIdx: currentWordIdxInPart,
+                                charIdx: charIdx0,
+                                targetWord: origWord,
+                                highlightWord: highlightWord,
+                                highlightIndices: [charIdx0],
+                                fullVariantText: fullVariantText,
+                                desc: `'${char}' helyett '${uChar}'`,
+                                targetChar: char,
+                                userChar: uChar
+                            });
                         }
-                        const highlightWord = wChars.join('');
-
-                        const newTargetParts = rawTargetParts.map(t => t.trim().split(/\s+/));
-                        if (newTargetParts[currentTargetIdx] && newTargetParts[currentTargetIdx][currentWordIdxInPart]) {
-                            newTargetParts[currentTargetIdx][currentWordIdxInPart] = highlightWord;
-                        }
-                        const fullVariantText = newTargetParts.map(parts => parts.join(' ')).join(', ');
-
-                        window.currentLiveTypoMistakes.push({
-                            id: window.currentLiveTypoMistakes.length + 1,
-                            slotKey: slotKey,
-                            partIdx: currentTargetIdx,
-                            wordIdx: currentWordIdxInPart,
-                            charIdx: charIdx0,
-                            targetWord: origWord,
-                            highlightWord: highlightWord,
-                            highlightIndices: [charIdx0],
-                            fullVariantText: fullVariantText,
-                            desc: `'${char}' helyett '${uChar}'`,
-                            targetChar: char,
-                            userChar: uChar
-                        });
                     }
                 }
 
@@ -3385,7 +3419,7 @@
 
         document.getElementById('dynamic-display').innerHTML = html;
 
-        // V23/V23: Aktív szó/szinonima és helyesen megoldott szinonimák lezárása
+        // V24/V24: Aktív szó/szinonima és helyesen megoldott szinonimák lezárása
         const rawTargetParts = fullTarget.split(',').map(s => s.trim());
         const isMultiSynonym = rawTargetParts.length > 1;
         let activeTargetIdx = 0;
@@ -3541,24 +3575,32 @@
                 : (userParts.length > 0 && targetParts.length > 0 ? [{ userPart: userParts[0], targetPart: targetParts[0], targetIdx: 0 }] : []);
             const typoData = getMistakeVariants(pairsForErrors, rawTargetParts, fullTarget);
 
-            // Összes hiba kombinálása: gépelés közbeni hibák + beküldött hibák
+            // V24: Összes hiba kombinálása: szavanként max 2 hiba megjegyzése
             const combinedMistakes = [];
-            const addedSlotKeys = new Set();
+            const mistakesPerWord = {};
 
             if (window.currentLiveTypoMistakes && window.currentLiveTypoMistakes.length > 0) {
                 window.currentLiveTypoMistakes.forEach(m => {
-                    combinedMistakes.push(m);
-                    if (m.slotKey) addedSlotKeys.add(m.slotKey);
+                    const wKey = `${m.partIdx}_${m.wordIdx}`;
+                    mistakesPerWord[wKey] = mistakesPerWord[wKey] || [];
+                    if (mistakesPerWord[wKey].length < 2) {
+                        mistakesPerWord[wKey].push(m);
+                        combinedMistakes.push(m);
+                    }
                 });
             }
 
             if (typoData.variants && typoData.variants.length > 0) {
                 typoData.variants.forEach(v => {
-                    const charIdx = (v.highlightIndices && v.highlightIndices.length > 0) ? v.highlightIndices[0] : 0;
-                    const slotKey = `${v.partIdx}_${v.wordIdx}_${charIdx}`;
-                    if (!addedSlotKeys.has(slotKey)) {
-                        addedSlotKeys.add(slotKey);
-                        combinedMistakes.push(v);
+                    const wKey = `${v.partIdx}_${v.wordIdx}`;
+                    mistakesPerWord[wKey] = mistakesPerWord[wKey] || [];
+                    if (mistakesPerWord[wKey].length < 2) {
+                        const charIdx = (v.highlightIndices && v.highlightIndices.length > 0) ? v.highlightIndices[0] : 0;
+                        const alreadyPresent = mistakesPerWord[wKey].some(m => m.charIdx === charIdx);
+                        if (!alreadyPresent) {
+                            mistakesPerWord[wKey].push(v);
+                            combinedMistakes.push(v);
+                        }
                     }
                 });
             }
@@ -3572,10 +3614,20 @@
             const maxMistakesInAnyWord = Object.values(wordMistakeCounts).reduce((max, c) => Math.max(max, c), 0);
             const totalMistakesCount = combinedMistakes.length;
 
-            const displayVariants = combinedMistakes.slice(0, 2).map((m, idx) => ({
-                ...m,
-                index: idx + 1
-            }));
+            // V24: Mindegyik szónál megjegyzett hibákat tartalmazza (nem slice(0, 2) globálisan!),
+            // és mindegyik hibához hozzárendeljük az adott szóhoz tartozó hibaszámot (1 -> narancssárga, 2 -> piros).
+            const displayVariants = combinedMistakes.map((m, idx) => {
+                const wKey = `${m.partIdx}_${m.wordIdx}`;
+                const wordErrors = wordMistakeCounts[wKey] || 1;
+                return {
+                    ...m,
+                    index: idx + 1,
+                    wordMistakeCount: wordErrors,
+                    isDanger: (wordErrors >= 2),
+                    isWarn: (wordErrors === 1),
+                    severityColor: (wordErrors >= 2) ? 'var(--error)' : 'var(--warning)'
+                };
+            });
 
             // Szabály (V20):
             // Egy szónál max 1-et lehet hibázni! Ha bármelyik szónál 2x hibázunk (maxMistakesInAnyWord >= 2),
@@ -3644,7 +3696,7 @@
             res.style.color='var(--success)';
 
             if (isWithinTolerance) {
-                // V23/V23 ÚJDONSÁG:
+                // V24/V24 ÚJDONSÁG:
                 // 1. A szó streak jelvény animációval felmegy (pl. 1-ről 2-re / 3-ra)
                 const wordStreakVal = document.getElementById('test-word-streak-val');
                 const wordStreakBadge = document.getElementById('test-word-streak-badge');
@@ -3730,7 +3782,7 @@
                 window.openArchiveModalForTest(currentWord.id);
             } else {
                 if (isWithinTolerance) {
-                    // V23/V23: Helyes válasz esetén NEM jelenítjük meg az alsó dobozt!
+                    // V24/V24: Helyes válasz esetén NEM jelenítjük meg az alsó dobozt!
                     res.style.display = 'none';
                 } else {
                     let txt = '';
@@ -3743,27 +3795,35 @@
                     } else if (hasTooManyWordErrors) {
                         const errorDetailsHtml = displayVariants.map((err) => {
                             const ctx = err.targetWord ? ` (${err.targetWord})` : '';
-                            return `<div>• ${err.index}. hiba${ctx}: <strong>${err.desc}</strong></div>`;
+                            const isDanger = (err.wordMistakeCount >= 2);
+                            const color = isDanger ? 'var(--error)' : 'var(--warning)';
+                            const icon = isDanger ? '❌' : '⚠️';
+                            const tag = isDanger ? '(2 elírás - széria nullázva)' : '(1 elírás - megengedett)';
+                            return `<div style="color:${color}; margin-top:3px;">• ${icon} ${err.index}. ${isDanger ? 'hiba' : 'elírás'}${ctx}: <strong>${err.desc}</strong> <span style="font-size:0.82rem; opacity:0.85;">${tag}</span></div>`;
                         }).join('');
 
                         txt += `
-                        <div style="font-size:0.9rem; color:var(--error); display:block; margin-top:8px; line-height:1.5;">
-                            <div style="font-weight:bold; margin-bottom:4px;">⚠️ Elírások történtek a beírás során:</div>
+                        <div style="font-size:0.9rem; color:var(--text-main); display:block; margin-top:8px; line-height:1.5;">
+                            <div style="font-weight:bold; margin-bottom:4px; color:var(--error);">⚠️ Elírások történtek a beírás során:</div>
                             ${displayVariants.length > 0 ? `
                             <div style="margin-left:6px; margin-bottom:5px;">
                                 ${errorDetailsHtml}
                             </div>` : ''}
-                            <div style="opacity:0.95;">Mivel az egyik szónál 2 elírás történt, a széria nullázódott! (0/${window.autoArchiveThreshold})</div>
+                            <div style="opacity:0.95; color:var(--error); font-weight:600;">Mivel az egyik szónál 2 elírás történt (pirossal jelezve), a széria nullázódott! (0/${window.autoArchiveThreshold})</div>
                         </div>`;
                     } else if (displayVariants.length > 0) {
                         const errorDetailsHtml = displayVariants.map((err) => {
                             const ctx = err.targetWord ? ` (${err.targetWord})` : '';
-                            return `<div>• ${err.index}. hiba${ctx}: <strong>${err.desc}</strong></div>`;
+                            const isDanger = (err.wordMistakeCount >= 2);
+                            const color = isDanger ? 'var(--error)' : 'var(--warning)';
+                            const icon = isDanger ? '❌' : '⚠️';
+                            const tag = isDanger ? '(2 elírás - széria nullázva)' : '(1 elírás - megengedett)';
+                            return `<div style="color:${color}; margin-top:3px;">• ${icon} ${err.index}. ${isDanger ? 'hiba' : 'elírás'}${ctx}: <strong>${err.desc}</strong> <span style="font-size:0.82rem; opacity:0.85;">${tag}</span></div>`;
                         }).join('');
 
                         txt += `
-                        <div style="font-size:0.9rem; color:var(--error); display:block; margin-top:8px; line-height:1.5;">
-                            <div style="font-weight:bold; margin-bottom:4px;">⚠️ Elírások történtek a beírás során:</div>
+                        <div style="font-size:0.9rem; color:var(--text-main); display:block; margin-top:8px; line-height:1.5;">
+                            <div style="font-weight:bold; margin-bottom:4px; color:var(--warning);">⚠️ Elírások történtek a beírás során:</div>
                             <div style="margin-left:6px; margin-bottom:5px;">
                                 ${errorDetailsHtml}
                             </div>
