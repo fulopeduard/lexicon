@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lexicon Aura v8</title>
+    <title>Lexicon Aura v9</title>
     <style>
         /* --- TÉMÁK ÉS VÁLTOZÓK --- */
         :root {
@@ -129,8 +129,15 @@
         .grid-mode .card-back h3 { font-size: 1.4rem; margin-bottom: 10px; }
         .grid-mode .card-back p { font-size: 0.85rem; }
 
+        .card-top-right-actions { position: absolute; top: 15px; right: 15px; display: flex; gap: 8px; align-items: center; z-index: 5; }
+        .grid-mode .card-top-right-actions { top: 10px; right: 10px; gap: 6px; }
+        .card-icon-action-btn { background: var(--bg-input); border: 1px solid var(--border); width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; padding: 0; color: var(--text-main); transition: all 0.2s ease; }
+        .card-icon-action-btn:hover { background: var(--border); transform: scale(1.05); }
+        .grid-mode .card-icon-action-btn { width: 32px; height: 32px; font-size: 0.85rem; }
+
         .edit-icon-btn { position: absolute; top: 15px; right: 15px; background: var(--bg-input); border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; }
         .grid-mode .edit-icon-btn { width: 32px; height: 32px; font-size: 0.9rem; top: 10px; right: 10px; }
+        .card-top-right-actions .edit-icon-btn, .card-top-right-actions .move-icon-btn { position: static; }
         .archive-pos-btn { position: absolute; top: 15px; left: 15px; }
         .grid-mode .archive-pos-btn { top: 10px; left: 10px; }
         .lang-tag { position: absolute; top: 20px; left: 20px; font-size: 0.8rem; background: var(--bg-input); padding: 4px 8px; border-radius: 6px; color: var(--text-sub); }
@@ -163,6 +170,16 @@
                 left: 8px;
                 font-size: 0.7rem;
                 padding: 2px 6px;
+            }
+            .grid-mode .card-top-right-actions {
+                top: 8px;
+                right: 8px;
+                gap: 4px;
+            }
+            .grid-mode .card-icon-action-btn {
+                width: 28px;
+                height: 28px;
+                font-size: 0.75rem;
             }
             .grid-mode .edit-icon-btn {
                 width: 28px;
@@ -516,6 +533,24 @@
         <div style="display: flex; gap: 10px;">
             <button class="btn-secondary" onclick="window.closeBulkMoveModal()" style="flex: 1;">Mégse</button>
             <button class="btn-primary" onclick="window.confirmBulkMove()" style="flex: 1;">Áthelyezés</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="single-move-modal" onclick="if(event.target === this) window.closeSingleMoveModal()">
+    <div class="modal-content" style="max-width: 440px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+            <h3 style="margin:0; color:var(--primary); display:flex; align-items:center; gap:8px;">📁 Szó áthelyezése</h3>
+            <button onclick="window.closeSingleMoveModal()" style="border:none; background:none; font-size:1.5rem; cursor:pointer; color:var(--text-main);">×</button>
+        </div>
+        <input type="hidden" id="single-move-word-id">
+        <p id="single-move-info" style="color:var(--text-sub); margin-bottom:15px; font-size:0.95rem;">Válaszd ki a célmappát a(z) <strong id="single-move-word-name" style="color:var(--text-main);"></strong> szó számára:</p>
+        
+        <select id="single-target-folder-select" style="margin-bottom: 25px; font-size: 1rem; width: 100%; padding: 10px;"></select>
+        
+        <div style="display: flex; gap: 10px;">
+            <button class="btn-secondary" onclick="window.closeSingleMoveModal()" style="flex: 1;">Mégse</button>
+            <button class="btn-primary" onclick="window.confirmSingleMove()" style="flex: 1;">Áthelyezés</button>
         </div>
     </div>
 </div>
@@ -1193,6 +1228,70 @@
         }
     };
 
+    window.openSingleMoveModal = (wordId, e) => {
+        if (e) e.stopPropagation();
+        const word = allWords.find(w => w.id === wordId);
+        if (!word) return;
+
+        document.getElementById('single-move-word-id').value = wordId;
+        const nameEl = document.getElementById('single-move-word-name');
+        if (nameEl) nameEl.textContent = `"${word.word}"`;
+
+        const select = document.getElementById('single-target-folder-select');
+        if (!select) return;
+
+        let optionsHtml = '';
+        const currentWordFolderId = word.folderId || '';
+
+        if (currentWordFolderId !== '') {
+            optionsHtml += `<option value="">📖 Tanulás (Alapértelmezett)</option>`;
+        }
+
+        allFolders.forEach(f => {
+            if (f.id !== currentWordFolderId) {
+                optionsHtml += `<option value="${f.id}">📂 ${f.name}</option>`;
+            }
+        });
+
+        if (!optionsHtml) {
+            optionsHtml = `<option value="" disabled>Nincs más elérhető mappa. Hozz létre egy új mappát!</option>`;
+        }
+
+        select.innerHTML = optionsHtml;
+        document.getElementById('single-move-modal').classList.add('open');
+    };
+
+    window.closeSingleMoveModal = () => {
+        document.getElementById('single-move-modal').classList.remove('open');
+    };
+
+    window.confirmSingleMove = async () => {
+        const wordId = document.getElementById('single-move-word-id').value;
+        const select = document.getElementById('single-target-folder-select');
+        if (!wordId || !select || select.disabled) return;
+
+        const targetFolderId = select.value;
+        const word = allWords.find(w => w.id === wordId);
+        if (!word) return;
+
+        const targetName = targetFolderId ? window.getFolderName(targetFolderId) : 'Tanulás';
+
+        try {
+            await updateDoc(doc(db, "words", wordId), { folderId: targetFolderId });
+            word.folderId = targetFolderId;
+            window.closeSingleMoveModal();
+
+            window.filterAndRenderCards();
+            if (window.currentDatabaseFolderId) window.renderFolderWords();
+            window.renderDatabase();
+
+            alert(`A(z) "${word.word}" szó sikeresen át lett helyezve a(z) "${targetName}" mappába!`);
+        } catch (err) {
+            console.error(err);
+            alert("Hiba történt az áthelyezés során: " + err.message);
+        }
+    };
+
     window.bulkDeleteWords = async () => {
         const selectedIds = Array.from(selectedWordIds);
         const count = selectedIds.length;
@@ -1767,7 +1866,10 @@
                     <div class="card-face card-back">
                         ${bulkCheckboxHTML}
                         <div class="archive-pos-btn"><button class="btn-archive" onclick="window.markAsLearnedDirect('${w.id}', event)">📦 ${isCompact ? '' : 'Archivál'}</button></div>
-                        <button class="edit-icon-btn" onclick="window.openEditModal('${w.id}', event)">✎</button>
+                        <div class="card-top-right-actions">
+                            ${(context === 'db') ? `<button class="card-icon-action-btn move-icon-btn" onclick="window.openSingleMoveModal('${w.id}', event)" title="Áthelyezés másik mappába">📁</button>` : ''}
+                            <button class="card-icon-action-btn edit-icon-btn" onclick="window.openEditModal('${w.id}', event)" title="Szerkesztés">✎</button>
+                        </div>
                         <h3>${w.meaning}</h3>
                         ${w.sentence ? `<p>„${w.sentence}”</p>` : ''}
                         ${controlsHTML}
