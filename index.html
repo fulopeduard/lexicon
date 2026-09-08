@@ -105,6 +105,19 @@
         h1 { font-size: 1.8rem; font-weight: 800; color: var(--primary); }
         .header-buttons { display: flex; gap: 10px; }
         .icon-btn { background: var(--bg-card); border: 1px solid var(--border); padding: 8px 12px; border-radius: 12px; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
+        .card-view-switch-btn {
+            transition: all 0.25s ease;
+            user-select: none;
+        }
+        .card-view-switch-btn:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+        }
+        .card-view-switch-btn.active-split-mode {
+            border-color: rgba(139, 92, 246, 0.45);
+            background: rgba(139, 92, 246, 0.12);
+            color: var(--accent);
+        }
 
         nav { display: flex; gap: 5px; background: var(--bg-card); padding: 6px; border-radius: 50px; box-shadow: var(--shadow); margin-bottom: 20px; width: 100%; max-width: 600px; border: 1px solid var(--border); overflow-x: auto; }
         nav button { flex: 1; border: none; background: transparent; padding: 12px; border-radius: 40px; cursor: pointer; font-weight: 600; color: var(--text-sub); white-space: nowrap; }
@@ -864,6 +877,302 @@
             from { transform: translateY(0) scale(1); opacity: 1; }
             to { transform: translateY(-20px) scale(0.92); opacity: 0; }
         }
+
+        /* --- V37 UNIFIED DUAL/SPLIT STUDY FLASHCARD --- */
+        .split-card-container {
+            perspective: none;
+            cursor: pointer;
+            position: relative;
+        }
+        .split-card {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            position: relative;
+            border-radius: var(--radius);
+            user-select: none;
+            box-sizing: border-box;
+            overflow: hidden;
+            border: 1.5px solid var(--border);
+            box-shadow: var(--shadow);
+            background: var(--bg-card);
+            transition: all 0.3s ease;
+        }
+        .grid-mode .split-card {
+            gap: 0;
+        }
+
+        /* Felső rész: Narancssárga enyhén üvegszerű kinézet, idegen szó */
+        .split-card-top {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 24px 26px;
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.20), rgba(234, 88, 12, 0.08));
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            position: relative;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+        body.dark-mode .split-card-top {
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.24), rgba(194, 65, 12, 0.10));
+        }
+        .grid-mode .split-card-top {
+            padding: 14px 14px;
+        }
+
+        .split-word-title {
+            font-size: 2.35rem;
+            font-weight: 800;
+            color: var(--text-main);
+            line-height: 1.2;
+            word-break: break-word;
+            letter-spacing: -0.5px;
+        }
+        .grid-mode .split-word-title {
+            font-size: 1.45rem;
+        }
+
+        .split-word-sentence {
+            font-size: 0.88rem;
+            color: var(--text-sub);
+            font-style: italic;
+            margin-top: 6px;
+            line-height: 1.35;
+            max-width: 92%;
+            opacity: 0.85;
+        }
+        .grid-mode .split-word-sentence {
+            font-size: 0.75rem;
+            margin-top: 3px;
+        }
+
+        /* Stílusos elválasztó vonal a narancs és lila rész között */
+        .split-card-divider {
+            width: 100%;
+            height: 1.5px;
+            background: linear-gradient(90deg, rgba(249, 115, 22, 0.4) 0%, rgba(255, 255, 255, 0.6) 50%, rgba(139, 92, 246, 0.4) 100%);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.25);
+            position: relative;
+            z-index: 5;
+            flex-shrink: 0;
+        }
+        body.dark-mode .split-card-divider {
+            background: linear-gradient(90deg, rgba(249, 115, 22, 0.45) 0%, rgba(255, 255, 255, 0.35) 50%, rgba(139, 92, 246, 0.45) 100%);
+            box-shadow: 0 0 12px rgba(139, 92, 246, 0.3);
+        }
+
+        /* Lenti rész: Lila enyhén üvegszerű kinézet, jelentések/szinonimák */
+        .split-card-bottom {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 24px 26px;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.20), rgba(124, 58, 237, 0.08));
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            position: relative;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+        body.dark-mode .split-card-bottom {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.24), rgba(109, 40, 217, 0.10));
+        }
+        .grid-mode .split-card-bottom {
+            padding: 14px 14px;
+        }
+
+        /* Szinonima váltó konténer manuális nyilakkal (V37) */
+        .card-synonym-switcher {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            width: 100%;
+            position: relative;
+        }
+        .synonym-nav-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            width: 100%;
+            position: relative;
+        }
+        .synonym-nav-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 1px solid rgba(139, 92, 246, 0.35);
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--text-main);
+            font-size: 0.88rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            backdrop-filter: blur(8px);
+            user-select: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            padding: 0;
+        }
+        .synonym-nav-btn:hover {
+            background: rgba(139, 92, 246, 0.35);
+            transform: scale(1.12);
+            border-color: var(--accent);
+        }
+        .synonym-nav-btn:active {
+            transform: scale(0.92);
+        }
+        .grid-mode .synonym-nav-btn {
+            width: 26px;
+            height: 26px;
+            font-size: 0.72rem;
+        }
+
+        .synonym-text {
+            font-size: 1.95rem;
+            font-weight: 700;
+            color: var(--text-main);
+            line-height: 1.25;
+            transition: opacity 0.18s ease, transform 0.18s ease;
+            word-break: break-word;
+            text-align: center;
+        }
+        .grid-mode .synonym-text {
+            font-size: 1.3rem;
+        }
+        .synonym-counter {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #a78bfa;
+            background: rgba(139, 92, 246, 0.18);
+            padding: 2px 10px;
+            border-radius: 12px;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+        .grid-mode .synonym-counter {
+            font-size: 0.68rem;
+            padding: 1px 7px;
+        }
+
+        /* V37: Kattintásra megjelenő funkciógombok: felül ikonok, kártyára kattintás = X */
+        .split-card-actions {
+            position: absolute;
+            inset: 0;
+            border-radius: var(--radius);
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.22s ease;
+            z-index: 50;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+        body:not(.dark-mode) .split-card-actions {
+            background: rgba(255, 255, 255, 0.75);
+        }
+        .actions-active .split-card-actions {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .split-card-top-actions {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 10px;
+            z-index: 70;
+        }
+        .split-card-top-actions button,
+        .split-icon-btn {
+            position: static !important;
+            top: auto !important;
+            right: auto !important;
+            bottom: auto !important;
+            left: auto !important;
+            margin: 0 !important;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-main);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(8px);
+            user-select: none;
+            padding: 0;
+            flex-shrink: 0;
+        }
+        .split-icon-btn:hover {
+            transform: scale(1.12);
+            border-color: var(--primary);
+        }
+        .split-icon-btn.split-act-archive:hover,
+        .split-icon-btn.btn-archive:hover {
+            border-color: var(--success);
+            background: rgba(16, 185, 129, 0.15);
+        }
+        .split-icon-btn.split-act-edit:hover,
+        .split-icon-btn.edit-icon-btn:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.15);
+        }
+        .split-icon-btn.split-act-move:hover,
+        .split-icon-btn.move-icon-btn:hover {
+            border-color: var(--accent);
+            background: rgba(139, 92, 246, 0.15);
+        }
+        .grid-mode .split-card-top-actions button,
+        .grid-mode .split-icon-btn {
+            width: 36px;
+            height: 36px;
+            font-size: 1.05rem;
+        }
+
+        .split-dismiss-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-sub);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 6px 14px;
+            border-radius: 20px;
+            opacity: 0.85;
+            pointer-events: none;
+            box-shadow: var(--shadow);
+            white-space: nowrap;
+        }
 </style>
 </head>
 <body>
@@ -907,7 +1216,6 @@
         <button onclick="switchTab('database')" id="tab-database">Adatbázis</button>
         <button onclick="switchTab('test')" id="tab-test">Teszt</button>
         <button onclick="switchTab('archive')" id="tab-archive">Archívum</button>
-        <button onclick="switchTab('add')" id="tab-add">Új szó</button>
     </nav>
 
     <div id="views-lexicon" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
@@ -916,6 +1224,8 @@
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <select id="learn-lang-select" onchange="filterAndRenderCards()" style="width: auto; margin:0; padding: 8px 16px;"></select>
                     <button id="btn-toggle-search" class="icon-btn" style="display: none; padding: 8px 12px; margin: 0; font-size: 1rem;" onclick="toggleLearnSearch()" title="Kereső megjelenítése/elrejtése">🔍</button>
+                    <button id="btn-toggle-card-view" class="icon-btn card-view-switch-btn" style="display: none; padding: 8px 12px; margin: 0; font-size: 1.15rem;" onclick="window.toggleDualCardMode()" title="Kártyanézet váltása (Forgatható / Félbevágott)">🌓</button>
+                    <button id="btn-learn-add-word" class="icon-btn" style="padding: 8px 12px; margin: 0; font-size: 1.15rem; font-weight: bold; color: var(--primary);" onclick="window.openAddModal()" title="Új szó hozzáadása">➕</button>
                 </div>
                 <span id="card-counter" style="color: var(--text-sub); font-weight: 600;">0 / 0</span>
             </div>
@@ -931,9 +1241,12 @@
 
         <section id="view-database" class="view-section">
             <div id="database-root">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center; width: 100%; margin-left: auto; margin-right: auto;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center; width: 100%; margin-left: auto; margin-right: auto; flex-wrap: wrap; gap: 10px;">
                     <h2 style="color: var(--primary); font-size: 1.5rem;">Mappák</h2>
-                    <button class="btn-primary" style="width: auto; padding: 8px 16px;" onclick="window.createFolder()">+ Új mappa</button>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="btn-primary" style="width: auto; padding: 8px 16px; display: inline-flex; align-items: center; gap: 6px;" onclick="window.openAddModal()" title="Új szó hozzáadása">➕ Új szó</button>
+                        <button class="btn-secondary" style="width: auto; padding: 8px 16px;" onclick="window.createFolder()">+ Új mappa</button>
+                    </div>
                 </div>
                 <div id="folder-list" class="grid-mode"></div>
             </div>
@@ -948,6 +1261,8 @@
                     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                         <select id="db-lang-select" onchange="window.renderFolderWords()" style="width: auto; margin:0; padding: 8px 16px;"></select>
                         <button id="btn-toggle-db-search" class="icon-btn" style="display: none; padding: 8px 12px; margin: 0; font-size: 1rem;" onclick="window.toggleDbSearch()" title="Kereső megjelenítése/elrejtése">🔍</button>
+                        <button id="btn-toggle-db-card-view" class="icon-btn card-view-switch-btn" style="display: none; padding: 8px 12px; margin: 0; font-size: 1.15rem;" onclick="window.toggleDualCardMode()" title="Kártyanézet váltása (Forgatható / Félbevágott)">🌓</button>
+                        <button id="btn-db-add-word" class="icon-btn" style="padding: 8px 12px; margin: 0; font-size: 1.15rem; font-weight: bold; color: var(--primary);" onclick="window.openAddModal(window.currentDatabaseFolderId)" title="Új szó hozzáadása ehhez a mappához">➕</button>
                         <button id="btn-db-bulk-mode" class="btn-secondary" style="display: none; width: auto; padding: 7px 14px; margin: 0; font-size: 0.85rem; align-items: center; gap: 6px;" onclick="window.toggleDbBulkMode()"><span id="btn-db-bulk-mode-text">☑️ Kijelölés</span></button>
                     </div>
                     <span id="db-card-counter" style="color: var(--text-sub); font-weight: 600;">0 / 0</span>
@@ -1008,43 +1323,50 @@
             <div id="archive-area"></div>
         </section>
 
-        <section id="view-add" class="view-section">
-            <div style="background: var(--bg-card); padding: 25px; border-radius: var(--radius); border: 1px solid var(--border); max-width: 500px; margin: 0 auto;">
-                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                    <button class="btn-secondary" style="width:auto; flex:1;" onclick="document.getElementById('add-single').classList.remove('hidden'); document.getElementById('add-bulk').classList.add('hidden');">Egyesével</button>
-                    <button class="btn-secondary" style="width:auto; flex:1;" onclick="document.getElementById('add-single').classList.add('hidden'); document.getElementById('add-bulk').classList.remove('hidden');">Tömeges</button>
-                </div>
-                
-                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                    <select id="new-lang-select" onchange="handleLangSelectChange()" style="margin-bottom: 0; flex: 1;">
-                        <option value="new">+ Új nyelv hozzáadása</option>
-                    </select>
-                    <input type="text" id="new-lang-input" placeholder="Új nyelv beírása (pl. Spanyol)" style="margin-bottom: 0; flex: 1; display: none;">
-                    
-                    <select id="add-folder-select" style="margin-bottom: 0; flex: 1;">
-                        <option value="">Alapértelmezett (Tanulás)</option>
-                    </select>
-                </div>
+    </div>
 
-                <div id="add-single" style="width: 100%;">
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px; width: 100%;">
-                        <input type="text" id="inp-word" placeholder="Idegen szó (pl. Run)" style="margin-bottom: 0; flex-grow: 1; width: 100%;">
-                        <button class="btn-secondary" style="width: 60px; flex-shrink: 0; padding: 0; font-size: 1.4rem; display: flex; align-items: center; justify-content: center; margin-bottom: 0;" onclick="openDeepl()" title="Megnyitás DeepL-ben">🌐</button>
-                    </div>
-                    <input type="text" id="inp-meaning" placeholder="Jelentés (pl. Fut, szalad)">
-                    <textarea id="inp-sentence" placeholder="Példamondat (Opcionális)" rows="2"></textarea>
-                    <button class="btn-primary" onclick="addWord()">Mentés</button>
-                </div>
-                <div id="add-bulk" class="hidden">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
-                        <p style="font-size: 0.85rem; color: var(--text-sub); margin: 0;">Formátum: Szó - Jelentés {Példamondat}</p>
-                        <button class="btn-secondary" style="width: auto; padding: 4px 12px; font-size: 0.8rem; background: var(--bg-card); color: var(--primary); border: 1px solid var(--primary);" onclick="window.openAIPromptModal()" title="Készíts automatikus promptot">✨ AI Prompt</button>
-                    </div>
-                    <textarea id="inp-bulk" rows="6" placeholder="Enhance - Fokoz {This will enhance the system.}&#10;Assess - Felmér {Assess your condition.}"></textarea>
-                    <button class="btn-primary" onclick="addBulk()">Tömeges Mentés</button>
-                </div>
+    <!-- V37: Új szó hozzáadása felugró ablak (Modal) -->
+    <div class="modal-overlay" id="add-word-modal" onclick="if(event.target === this) window.closeAddModal()">
+        <div class="modal-content" style="max-width: 520px; width: 92%;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="color: var(--primary); margin: 0; font-size: 1.3rem;">➕ Új szó hozzáadása</h3>
+                <button onclick="window.closeAddModal()" style="border:none; background:none; font-size:1.5rem; cursor:pointer; color:var(--text-main); line-height: 1; padding: 4px 8px;" title="Bezárás">✕</button>
             </div>
-        </section>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button class="btn-secondary" style="width:auto; flex:1;" onclick="document.getElementById('add-single').classList.remove('hidden'); document.getElementById('add-bulk').classList.add('hidden');">Egyesével</button>
+                <button class="btn-secondary" style="width:auto; flex:1;" onclick="document.getElementById('add-single').classList.add('hidden'); document.getElementById('add-bulk').classList.remove('hidden');">Tömeges</button>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <select id="new-lang-select" onchange="handleLangSelectChange()" style="margin-bottom: 0; flex: 1;">
+                    <option value="new">+ Új nyelv hozzáadása</option>
+                </select>
+                <input type="text" id="new-lang-input" placeholder="Új nyelv beírása (pl. Spanyol)" style="margin-bottom: 0; flex: 1; display: none;">
+                
+                <select id="add-folder-select" style="margin-bottom: 0; flex: 1;">
+                    <option value="">Alapértelmezett (Tanulás)</option>
+                </select>
+            </div>
+
+            <div id="add-single" style="width: 100%;">
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; width: 100%;">
+                    <input type="text" id="inp-word" placeholder="Idegen szó (pl. Run)" style="margin-bottom: 0; flex-grow: 1; width: 100%;">
+                    <button class="btn-secondary" style="width: 60px; flex-shrink: 0; padding: 0; font-size: 1.4rem; display: flex; align-items: center; justify-content: center; margin-bottom: 0;" onclick="openDeepl()" title="Megnyitás DeepL-ben">🌐</button>
+                </div>
+                <input type="text" id="inp-meaning" placeholder="Jelentés (pl. Fut, szalad)">
+                <textarea id="inp-sentence" placeholder="Példamondat (Opcionális)" rows="2"></textarea>
+                <button class="btn-primary" onclick="addWord()">Mentés</button>
+            </div>
+            <div id="add-bulk" class="hidden">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+                    <p style="font-size: 0.85rem; color: var(--text-sub); margin: 0;">Formátum: Szó - Jelentés {Példamondat}</p>
+                    <button class="btn-secondary" style="width: auto; padding: 4px 12px; font-size: 0.8rem; background: var(--bg-card); color: var(--primary); border: 1px solid var(--primary);" onclick="window.openAIPromptModal()" title="Készíts automatikus promptot">✨ AI Prompt</button>
+                </div>
+                <textarea id="inp-bulk" rows="6" placeholder="Enhance - Fokoz {This will enhance the system.}&#10;Assess - Felmér {Assess your condition.}"></textarea>
+                <button class="btn-primary" onclick="addBulk()">Tömeges Mentés</button>
+            </div>
+        </div>
     </div>
 
 </div>
@@ -1161,6 +1483,23 @@
         </div>
         <div style="display: flex; flex-direction: column; gap: 15px;">
             <button class="btn-secondary" onclick="toggleLearnViewMode()" id="modal-view-btn">🔳 Egyes nézet (Fókuszált)</button>
+            <button class="btn-secondary" onclick="toggleDualCardMode()" id="modal-dual-card-btn">🎴 Osztott kártya (Szó & Jelentés): Be</button>
+            <div id="dual-card-speed-container" style="background: var(--bg-input); padding: 14px 16px; border-radius: 14px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px;">
+                <label style="display: flex; align-items: center; gap: 10px; font-size: 0.9rem; font-weight: bold; cursor: pointer;">
+                    <input type="checkbox" id="set-auto-synonym-cycle" onchange="window.saveAutoSynonymCycle(this.checked)" style="width: auto; margin: 0; transform: scale(1.2); accent-color: var(--primary);">
+                    <span>Automatikus szinonima-váltás</span>
+                </label>
+                <div id="synonym-speed-row" style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; transition: opacity 0.2s;">
+                    <span style="color: var(--text-sub);">⏱️ Váltási időköz:</span>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <input type="number" id="set-synonym-speed" min="1" max="15" step="0.5" value="3" onchange="window.saveSynonymSpeed(this.value)" style="width: 55px; padding: 4px 6px; margin: 0; text-align: center; font-weight: bold; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main);">
+                        <span style="color: var(--text-sub); font-size: 0.82rem; font-weight: bold;">mp</span>
+                    </div>
+                </div>
+                <div style="font-size: 0.76rem; color: var(--text-sub); line-height: 1.35;">
+                    A kártyán a nyilakkal (◀ ▶) mindig manuálisan is tudsz lépkedni. Bekapcsolva az időzítő automatikusan is vált.
+                </div>
+            </div>
             <button class="btn-secondary" onclick="toggleTheme()" id="modal-theme-btn">☀️ Világos mód</button>
             <button class="btn-secondary" onclick="toggleDeeplPopup()" id="modal-deepl-btn">🌐 DeepL: Felugró ablak</button>
             
@@ -1300,6 +1639,168 @@
         if (btn) btn.textContent = window.isDeeplPopup ? '🌐 DeepL: Felugró ablak' : '🌐 DeepL: Új lap (Tab)';
     };
 
+    // V37: Kétoldalas / Osztott kártya beállítás
+    window.dualCardMode = localStorage.getItem('dual_card_mode') !== 'false';
+
+    window.updateDualCardBtnText = () => {
+        const btn = document.getElementById('modal-dual-card-btn');
+        if (btn) btn.textContent = window.dualCardMode ? '🎴 Osztott kártya (Szó & Jelentés): Be' : '🎴 Osztott kártya (Szó & Jelentés): Ki';
+
+        const learnToggleBtn = document.getElementById('btn-toggle-card-view');
+        const dbToggleBtn = document.getElementById('btn-toggle-db-card-view');
+
+        const icon = window.dualCardMode ? '🌓' : '🔄';
+        const title = window.dualCardMode 
+            ? 'Jelenlegi nézet: Félbevágott kártyák (Kattints a forgatható nézethez: 🔄)' 
+            : 'Jelenlegi nézet: Forgatható kártyák (Kattints a félbevágott nézethez: 🌓)';
+
+        [learnToggleBtn, dbToggleBtn].forEach(b => {
+            if (b) {
+                b.innerHTML = icon;
+                b.title = title;
+                b.setAttribute('aria-label', title);
+                if (window.dualCardMode) {
+                    b.classList.add('active-split-mode');
+                } else {
+                    b.classList.remove('active-split-mode');
+                }
+            }
+        });
+    };
+
+    window.toggleDualCardMode = (e) => {
+        if (e) e.stopPropagation();
+        window.dualCardMode = !window.dualCardMode;
+        localStorage.setItem('dual_card_mode', window.dualCardMode);
+        window.updateDualCardBtnText();
+        window.renderLearnArea();
+        if (window.currentDatabaseFolderId) window.renderFolderWords();
+        window.saveSettingsToDB();
+        if (window.showToast) {
+            window.showToast(window.dualCardMode ? '🌓 Félbevágott (osztott) kártyák aktív' : '🔄 Forgatható kártyák aktív', 'info', 1600);
+        }
+    };
+
+    // V37: Kártya akciógombok megnyitása kattintásra
+    window.toggleCardActions = (wordId, e) => {
+        if (e) e.stopPropagation();
+        const container = document.getElementById('card-container-' + wordId);
+        if (container) {
+            container.classList.toggle('actions-active');
+        }
+    };
+
+    // Kattintás kívülre bezárja a megnyitott akciógombokat
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.card-container')) {
+            document.querySelectorAll('.split-card-container.actions-active').forEach(c => {
+                c.classList.remove('actions-active');
+            });
+        }
+    });
+
+    // V37: Szinonimák manuális léptetése és opcionális automatikus váltás
+    let synonymIntervalId = null;
+    window.synonymSpeed = parseFloat(localStorage.getItem('synonym_speed')) || 3;
+    window.autoSynonymCycle = localStorage.getItem('auto_synonym_cycle') === 'true';
+
+    window.saveAutoSynonymCycle = (enabled) => {
+        window.autoSynonymCycle = Boolean(enabled);
+        localStorage.setItem('auto_synonym_cycle', window.autoSynonymCycle);
+        const chk = document.getElementById('set-auto-synonym-cycle');
+        if (chk) chk.checked = window.autoSynonymCycle;
+        const speedRow = document.getElementById('synonym-speed-row');
+        if (speedRow) speedRow.style.opacity = window.autoSynonymCycle ? '1' : '0.5';
+        if (window.startSynonymCycling) window.startSynonymCycling();
+        window.saveSettingsToDB();
+    };
+
+    window.saveSynonymSpeed = (val) => {
+        let speed = parseFloat(val);
+        if (isNaN(speed) || speed < 0.5) speed = 0.5;
+        if (speed > 30) speed = 30;
+        window.synonymSpeed = speed;
+        localStorage.setItem('synonym_speed', speed);
+        const inp = document.getElementById('set-synonym-speed');
+        if (inp) inp.value = speed;
+        if (window.startSynonymCycling) window.startSynonymCycling();
+        window.saveSettingsToDB();
+    };
+
+    // Manuális szinonima léptetés a kártyán lévő nyilakkal
+    window.stepSynonym = (wordId, delta, e) => {
+        if (e) e.stopPropagation();
+        const switcher = document.getElementById('synonym-switcher-' + wordId) || document.querySelector(`#card-container-${wordId} .card-synonym-switcher`);
+        if (!switcher) return;
+        const raw = switcher.getAttribute('data-synonyms');
+        if (!raw) return;
+        try {
+            const list = JSON.parse(raw);
+            if (list.length <= 1) return;
+            let cur = parseInt(switcher.getAttribute('data-index') || '0');
+            cur = (cur + delta + list.length) % list.length;
+            switcher.setAttribute('data-index', cur);
+
+            const textEl = switcher.querySelector('.synonym-text');
+            const badgeEl = switcher.querySelector('.synonym-counter');
+            if (textEl) {
+                textEl.style.opacity = '0';
+                textEl.style.transform = delta > 0 ? 'translateX(8px)' : 'translateX(-8px)';
+                setTimeout(() => {
+                    textEl.textContent = list[cur];
+                    textEl.style.opacity = '1';
+                    textEl.style.transform = 'translateX(0)';
+                }, 140);
+            }
+            if (badgeEl) {
+                badgeEl.textContent = `${cur + 1}/${list.length}`;
+            }
+        } catch (err) {
+            console.error("stepSynonym error:", err);
+        }
+    };
+
+    window.startSynonymCycling = () => {
+        if (synonymIntervalId) {
+            clearInterval(synonymIntervalId);
+            synonymIntervalId = null;
+        }
+        // Csak akkor indítunk automatikus időzítőt, ha be van kapcsolva az autoSynonymCycle és a dualCardMode!
+        if (!window.autoSynonymCycle || !window.dualCardMode) return;
+
+        const intervalMs = Math.round((window.synonymSpeed || 3) * 1000);
+        synonymIntervalId = setInterval(() => {
+            const switchers = document.querySelectorAll('.card-synonym-switcher');
+            if (!switchers || !switchers.length) return;
+            switchers.forEach(el => {
+                const raw = el.getAttribute('data-synonyms');
+                if (!raw) return;
+                try {
+                    const list = JSON.parse(raw);
+                    if (list.length <= 1) return;
+                    let cur = parseInt(el.getAttribute('data-index') || '0');
+                    cur = (cur + 1) % list.length;
+                    el.setAttribute('data-index', cur);
+
+                    const textEl = el.querySelector('.synonym-text');
+                    const badgeEl = el.querySelector('.synonym-counter');
+                    if (textEl) {
+                        textEl.style.opacity = '0';
+                        textEl.style.transform = 'translateY(4px)';
+                        setTimeout(() => {
+                            textEl.textContent = list[cur];
+                            textEl.style.opacity = '1';
+                            textEl.style.transform = 'translateY(0)';
+                        }, 200);
+                    }
+                    if (badgeEl) {
+                        badgeEl.textContent = `${cur + 1}/${list.length}`;
+                    }
+                } catch (err) {}
+            });
+        }, intervalMs);
+    };
+
     function syncSettingsInputsToUI() {
         const autoArch = document.getElementById('set-auto-archive');
         if (autoArch) autoArch.checked = window.autoArchiveEnabled;
@@ -1311,6 +1812,13 @@
         if (restDays) restDays.value = window.defaultArchiveDays;
         window.updateViewBtnText();
         window.updateDeeplBtnText();
+        window.updateDualCardBtnText();
+        const synSpeed = document.getElementById('set-synonym-speed');
+        if (synSpeed) synSpeed.value = window.synonymSpeed || 3;
+        const autoSynChk = document.getElementById('set-auto-synonym-cycle');
+        if (autoSynChk) autoSynChk.checked = Boolean(window.autoSynonymCycle);
+        const speedRow = document.getElementById('synonym-speed-row');
+        if (speedRow) speedRow.style.opacity = window.autoSynonymCycle ? '1' : '0.5';
     }
 
     // Inicializáljuk a UI elemeket
@@ -1327,6 +1835,9 @@
             testModeReverse: Boolean(window.testModeReverse),
             learnGridView: Boolean(isLearnGridView),
             deeplPopup: Boolean(window.isDeeplPopup),
+            dualCardMode: Boolean(window.dualCardMode),
+            synonymSpeed: parseFloat(window.synonymSpeed) || 3,
+            autoSynonymCycle: Boolean(window.autoSynonymCycle),
             theme: document.body.classList.contains('dark-mode') ? 'dark' : 'light',
             lastUsedLang: localStorage.getItem('last_used_lang') || ''
         };
@@ -1488,6 +1999,18 @@
                     if (s.deeplPopup !== undefined) {
                         window.isDeeplPopup = !!s.deeplPopup;
                         localStorage.setItem('deepl_popup', window.isDeeplPopup);
+                    }
+                    if (s.dualCardMode !== undefined) {
+                        window.dualCardMode = !!s.dualCardMode;
+                        localStorage.setItem('dual_card_mode', window.dualCardMode);
+                    }
+                    if (s.synonymSpeed !== undefined) {
+                        window.synonymSpeed = parseFloat(s.synonymSpeed) || 3;
+                        localStorage.setItem('synonym_speed', window.synonymSpeed);
+                    }
+                    if (s.autoSynonymCycle !== undefined) {
+                        window.autoSynonymCycle = !!s.autoSynonymCycle;
+                        localStorage.setItem('auto_synonym_cycle', window.autoSynonymCycle);
                     }
                     if (s.theme !== undefined) {
                         applyTheme(s.theme);
@@ -2085,11 +2608,12 @@
         ) || allWords.find(item => item.word.trim().toLowerCase() === targetWordLower);
 
         if (existingWord) {
-            // V31: Töröljük a beviteli mezőket, hogy ne maradjon beírva a szó az új szó résznél
+            // V31/V37: Töröljük a beviteli mezőket és zárjuk be az új szó ablakot
             document.getElementById('inp-word').value = ''; 
             document.getElementById('inp-meaning').value = '';
             document.getElementById('inp-sentence').value = '';
             document.getElementById('new-lang-input').value = '';
+            window.closeAddModal();
             window.openEditModal(existingWord.id);
             return;
         }
@@ -2106,7 +2630,11 @@
             window.filterAndRenderCards(); 
             if(window.currentDatabaseFolderId) window.renderFolderWords();
             window.renderDatabase();
-            alert("Mentve!");
+            if (window.showToast) {
+                window.showToast("✅ Szó mentve: " + w, "success", 2000);
+            } else {
+                alert("Mentve!");
+            }
             document.getElementById('inp-word').focus();
         } catch (e) { alert("Hiba: " + e.message); }
     };
@@ -2379,12 +2907,21 @@
         const viewLearnEl = document.getElementById('view-learn');
         if (viewLearnEl) viewLearnEl.classList.toggle('grid-view-active', isLearnGridView);
         if (!area || !counter) return;
-        if (isLearnGridView && activeWords.length > 0) {
-            if(searchBtn) searchBtn.style.display = 'flex';
+        const cardViewBtn = document.getElementById('btn-toggle-card-view');
+        if (activeWords.length > 0) {
+            if (isLearnGridView) {
+                if(searchBtn) searchBtn.style.display = 'flex';
+            } else {
+                if(searchBtn) searchBtn.style.display = 'none';
+                if(searchContainer) searchContainer.style.display = 'none';
+                if(searchInputEl) searchInputEl.value = ''; 
+            }
+            if (cardViewBtn) cardViewBtn.style.display = 'flex';
         } else {
             if(searchBtn) searchBtn.style.display = 'none';
             if(searchContainer) searchContainer.style.display = 'none';
             if(searchInputEl) searchInputEl.value = ''; 
+            if (cardViewBtn) cardViewBtn.style.display = 'none';
         }
         if(!activeWords.length) { 
             area.innerHTML = `<div class="test-card"><p>Nincs aktív tanulnivaló ezen a nyelven.</p></div>`; 
@@ -2402,6 +2939,7 @@
             counter.textContent = `${currentIndex + 1} / ${activeWords.length}`;
             area.innerHTML = generateCardHTML(activeWords[currentIndex], false, 'learn');
         }
+        if (window.dualCardMode && window.startSynonymCycling) window.startSynonymCycling();
     };
 
     window.renderFolderWords = () => {
@@ -2447,12 +2985,21 @@
         const searchContainer = document.getElementById('db-search-container');
         const bulkBtn = document.getElementById('btn-db-bulk-mode');
 
-        if (isEffectiveGrid && activeDbWords.length > 0) {
-            if(searchBtn) searchBtn.style.display = 'flex';
+        const dbCardViewBtn = document.getElementById('btn-toggle-db-card-view');
+        if (activeDbWords.length > 0) {
+            if (isEffectiveGrid) {
+                if(searchBtn) searchBtn.style.display = 'flex';
+            } else {
+                if(searchBtn) searchBtn.style.display = 'none';
+                if(searchContainer) searchContainer.style.display = 'none';
+                if(searchInputEl) searchInputEl.value = ''; 
+            }
+            if (dbCardViewBtn) dbCardViewBtn.style.display = 'flex';
         } else {
             if(searchBtn) searchBtn.style.display = 'none';
             if(searchContainer) searchContainer.style.display = 'none';
             if(searchInputEl) searchInputEl.value = ''; 
+            if (dbCardViewBtn) dbCardViewBtn.style.display = 'none';
         }
 
         if (bulkBtn) {
@@ -2486,6 +3033,7 @@
         }
 
         window.updateDbBulkUI();
+        if (window.dualCardMode && window.startSynonymCycling) window.startSynonymCycling();
     };
 
     function generateCardHTML(w, isCompact, context = 'learn') {
@@ -2496,24 +3044,82 @@
         const isSelected = isBulk && selectedWordIds.has(w.id);
         const selectedClass = isSelected ? 'card-bulk-selected' : '';
 
+        const folderName = w.folderId ? window.getFolderName(w.folderId) : '';
+        const folderTag = folderName ? `<span class="lang-tag" style="left: auto; right: 16px; top: 14px; background: rgba(99, 102, 241, 0.12); color: var(--primary); font-size: 0.75rem;">📂 ${folderName}</span>` : '';
+
+        const bulkCheckboxHTML = isBulk ? `
+            <div class="bulk-check-badge" onclick="event.stopPropagation()">
+                <input type="checkbox" id="chk-word-${w.id}" ${isSelected ? 'checked' : ''} onchange="window.toggleSelectWord('${w.id}')" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary); margin: 0;">
+            </div>` : '';
+
+        // V37: Kétoldalas / Osztott kártya mód (Szó & Jelentés egyszerre látható)
+        if (window.dualCardMode) {
+            const rawMeaning = (w.meaning || '').trim();
+            const rawSynonyms = rawMeaning.split(',').map(s => s.trim()).filter(Boolean);
+            const synonymsList = rawSynonyms.length > 0 ? rawSynonyms : [rawMeaning];
+            const firstSynonym = synonymsList[0];
+            const hasMultipleSynonyms = synonymsList.length > 1;
+            const encodedSynonyms = JSON.stringify(synonymsList).replace(/"/g, '&quot;');
+
+            const clickHandler = isBulk 
+                ? `onclick="window.toggleSelectWord('${w.id}')"` 
+                : `onclick="window.toggleCardActions('${w.id}', event)"`;
+
+            const navButtons = (isCompact || isBulk) ? '' : `
+                <button class="split-btn-action split-nav-btn" onclick="${prevFn}(event)" title="Előző szó">←</button>
+                <button class="split-btn-action split-nav-btn" onclick="${nextFn}(event)" title="Következő szó">→</button>
+            `;
+
+            return `
+                <div class="card-container split-card-container ${selectedClass}" id="card-container-${w.id}" ${clickHandler}>
+                    <div class="split-card">
+                        ${bulkCheckboxHTML}
+                        <!-- Felső rész: Narancssárga enyhén üvegszerű kinézet, idegen szó -->
+                        <div class="split-card-top">
+                            ${folderTag}
+                            <div class="split-word-title">${w.word}</div>
+                            ${w.sentence ? `<div class="split-word-sentence">„${w.sentence}”</div>` : ''}
+                        </div>
+
+                        <!-- Stílusos elválasztó vonal -->
+                        <div class="split-card-divider"></div>
+
+                        <!-- Lenti rész: Lila enyhén üvegszerű kinézet, jelentések/szinonimák és manuális léptető nyilak -->
+                        <div class="split-card-bottom">
+                            <div class="card-synonym-switcher" data-synonyms="${encodedSynonyms}" data-index="0" id="synonym-switcher-${w.id}">
+                                <div class="synonym-nav-row">
+                                    ${hasMultipleSynonyms ? `<button class="synonym-nav-btn prev-synonym-btn" onclick="window.stepSynonym('${w.id}', -1, event)" title="Előző szinonima">◀</button>` : ''}
+                                    <span class="synonym-text">${firstSynonym}</span>
+                                    ${hasMultipleSynonyms ? `<button class="synonym-nav-btn next-synonym-btn" onclick="window.stepSynonym('${w.id}', 1, event)" title="Következő szinonima">▶</button>` : ''}
+                                </div>
+                                ${hasMultipleSynonyms ? `<span class="synonym-counter">1/${synonymsList.length}</span>` : ''}
+                            </div>
+                        </div>
+
+                        <!-- V37: Kattintásra megjelenő funkciógombok: felül csak ikonok (Archiválás, Szerkesztés), bárhova máshova kattintás = X (bezárás) -->
+                        <div class="split-card-actions" onclick="window.toggleCardActions('${w.id}', event)" title="Kattints bárhova a bezáráshoz (✕)">
+                            <div class="split-card-top-actions" onclick="event.stopPropagation()">
+                                <button class="split-icon-btn split-act-archive btn-archive" onclick="window.markAsLearnedDirect('${w.id}', event)" title="Archiválás">📦</button>
+                                ${(context === 'db') ? `<button class="split-icon-btn split-act-move move-icon-btn" onclick="window.openSingleMoveModal('${w.id}', event)" title="Áthelyezés másik mappába">📁</button>` : ''}
+                                <button class="split-icon-btn split-act-edit edit-icon-btn" onclick="window.openEditModal('${w.id}', event)" title="Szerkesztés">✎</button>
+                            </div>
+                            <div class="split-dismiss-hint">✕ Bezárás (kattints bárhova)</div>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        // Hagyományos kártyanézet (nyelv kiírás nélkül)
         const controlsHTML = (isCompact || isBulk) ? '' : `
             <div class="card-actions-inline" onclick="event.stopPropagation()">
                 <button onclick="${prevFn}(event)" title="Előző">←</button>
                 <button onclick="flipThisCard(event, this)" title="Fordít">↻</button>
                 <button onclick="${nextFn}(event)" title="Következő">→</button>
             </div>`;
-            
-        const folderName = w.folderId ? window.getFolderName(w.folderId) : '';
-        const folderTag = folderName ? `<span class="lang-tag" style="left: auto; right: 20px; background: rgba(99, 102, 241, 0.1); color: var(--primary);">📂 ${folderName}</span>` : '';
 
         const clickHandler = isBulk 
             ? `onclick="window.toggleSelectWord('${w.id}')"` 
             : `onclick="flipThisCard(event, this)"`;
-
-        const bulkCheckboxHTML = isBulk ? `
-            <div class="bulk-check-badge" onclick="event.stopPropagation()">
-                <input type="checkbox" id="chk-word-${w.id}" ${isSelected ? 'checked' : ''} onchange="window.toggleSelectWord('${w.id}')" style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--primary); margin: 0;">
-            </div>` : '';
 
         const subtitleText = isBulk ? 'Kattints a kijelöléshez!' : 'Kattints a megfordításhoz!';
 
@@ -2522,7 +3128,6 @@
                 <div class="card">
                     <div class="card-face card-front">
                         ${bulkCheckboxHTML}
-                        <span class="lang-tag">${w.lang}</span>
                         ${folderTag}
                         <h2>${w.word}</h2>
                         <p style="font-size: ${isCompact ? '0.8rem' : '1rem'}; opacity: 0.7;">${subtitleText}</p>
@@ -2615,8 +3220,10 @@
     window.switchTab = (tab) => {
         document.getElementById('views-lexicon').querySelectorAll('.view-section').forEach(e => e.classList.remove('active'));
         document.getElementById('nav-lexicon').querySelectorAll('button').forEach(e => e.classList.remove('active'));
-        document.getElementById(`view-${tab}`).classList.add('active');
-        document.getElementById(`tab-${tab}`).classList.add('active');
+        const viewEl = document.getElementById(`view-${tab}`);
+        if (viewEl) viewEl.classList.add('active');
+        const tabBtn = document.getElementById(`tab-${tab}`);
+        if (tabBtn) tabBtn.classList.add('active');
         if(tab === 'test') window.initTest(); 
         if(tab === 'learn') window.filterAndRenderCards(); 
         if(tab === 'archive') window.renderArchive();
@@ -2624,7 +3231,7 @@
             if (window.currentDatabaseFolderId) window.renderFolderWords();
             else window.renderDatabase();
         }
-        if(tab === 'add') setTimeout(() => { const el = document.getElementById('inp-word'); if(el) el.focus(); }, 50);
+        if(tab === 'add') window.openAddModal();
     };
 
     window.openEditModal = (id, e) => {
@@ -2638,6 +3245,54 @@
         document.getElementById('edit-modal').classList.add('open');
     };
     window.closeEditModal = () => document.getElementById('edit-modal').classList.remove('open');
+
+    // V37: Új szó hozzáadása ablak megnyitása és bezárása
+    window.openAddModal = (targetFolderId) => {
+        if (window.updateLangLists) window.updateLangLists();
+        if (window.updateFolderSelects) window.updateFolderSelects();
+
+        // Aktuális nyelv automatikus beállítása
+        const activeView = document.querySelector('.view-section.active');
+        let currentLang = '';
+        if (activeView && activeView.id === 'view-learn') {
+            currentLang = document.getElementById('learn-lang-select')?.value;
+        } else if (activeView && activeView.id === 'view-database') {
+            currentLang = document.getElementById('db-lang-select')?.value;
+        }
+        if (currentLang) {
+            const langSelect = document.getElementById('new-lang-select');
+            if (langSelect && Array.from(langSelect.options).some(o => o.value === currentLang)) {
+                langSelect.value = currentLang;
+                if (window.handleLangSelectChange) window.handleLangSelectChange();
+            }
+        }
+
+        // Mappa automatikus beállítása
+        const folderSelect = document.getElementById('add-folder-select');
+        if (folderSelect) {
+            if (targetFolderId !== undefined && targetFolderId !== null) {
+                folderSelect.value = targetFolderId;
+            } else if (window.currentDatabaseFolderId) {
+                folderSelect.value = window.currentDatabaseFolderId;
+            } else {
+                folderSelect.value = '';
+            }
+        }
+
+        const modal = document.getElementById('add-word-modal');
+        if (modal) {
+            modal.classList.add('open');
+            setTimeout(() => {
+                const el = document.getElementById('inp-word');
+                if (el) el.focus();
+            }, 80);
+        }
+    };
+
+    window.closeAddModal = () => {
+        const modal = document.getElementById('add-word-modal');
+        if (modal) modal.classList.remove('open');
+    };
     window.openSettingsModal = () => document.getElementById('settings-modal').classList.add('open');
     window.closeSettingsModal = () => document.getElementById('settings-modal').classList.remove('open');
 
@@ -2725,6 +3380,9 @@
         window.currentTestMaxWordErrors = 0;
         window.currentTestTotalErrors = 0;
         window.pendingTestArchiveWord = null;
+        window.roundInitialUserStreak = userStreak;
+        window.roundInitialWordStreak = item.perfectStreak || 0;
+        window.currentTestStreakProtected = false;
 
         const promptLabel = window.testModeReverse ? "Idegen szó?" : "Jelentés?";
         const displayWord = window.testModeReverse ? item.meaning : item.word;
@@ -3427,12 +4085,24 @@
         const iconEl = document.getElementById('test-mistake-icon');
         const countEl = document.getElementById('test-mistake-count');
 
+        const fullTarget = window.testModeReverse ? (testList[testIndex] ? testList[testIndex].word : '') : (testList[testIndex] ? testList[testIndex].meaning : '');
+        const rawTargetParts = fullTarget ? fullTarget.split(',').map(s => s.trim()) : [];
+        const isMultiSynonym = rawTargetParts.length > 1;
+        const hasSolvedSynonym = Boolean(window.solvedSynonymsList && window.solvedSynonymsList.length >= 1);
+
         if (indicator && iconEl && countEl) {
             if (maxMistakesInAnyWord >= 2) {
-                indicator.className = 'test-mistake-badge state-danger';
-                iconEl.textContent = '❌';
-                countEl.textContent = '0';
-                indicator.title = 'A széria nullázódott! (Egy szónál 2 elírás történt)';
+                if (isMultiSynonym && hasSolvedSynonym) {
+                    indicator.className = 'test-mistake-badge state-warn';
+                    iconEl.textContent = '🛡️';
+                    countEl.textContent = '0';
+                    indicator.title = 'A széria megmaradt (1 szinonima helyes), de erre a körre nem jár pont és a széria sem nő!';
+                } else {
+                    indicator.className = 'test-mistake-badge state-danger';
+                    iconEl.textContent = '❌';
+                    countEl.textContent = '0';
+                    indicator.title = 'A széria nullázódott! (Egy szónál 2 elírás történt)';
+                }
             } else if (activeWordErrors >= 1) {
                 indicator.className = 'test-mistake-badge state-warn';
                 iconEl.textContent = '⚠️';
@@ -3446,44 +4116,78 @@
             }
         }
 
-        // 3. Ha 2x hibázunk egy szónál (és nincs 1-3 javaslat védve), azonnali nullázás és animáció!
+        // 3. Ha 2x hibázunk egy szónál (és nincs 1-3 javaslat védve):
         const hintProtected = (hintCountForCurrentWord > 0 && hintCountForCurrentWord < 4);
-        if (maxMistakesInAnyWord >= 2 && !hintProtected && !window.currentTestStreakBroken) {
-            window.currentTestStreakBroken = true;
+        if (maxMistakesInAnyWord >= 2 && !hintProtected) {
+            if (isMultiSynonym && hasSolvedSynonym) {
+                // V37: Ha több szinonima van és legalább egy már meg van oldva, a széria VÉDETT, nem nullázódik!
+                window.currentTestStreakProtected = true;
+            } else if (!window.currentTestStreakBroken) {
+                window.currentTestStreakBroken = true;
 
-            // A. Kihagyás / Megoldás gomb zölddé válik és a szívtörés eltűnik
-            const giveUpBtn = document.getElementById('btn-giveup');
-            if (giveUpBtn) {
-                giveUpBtn.classList.add('skip-btn-safe');
-                giveUpBtn.innerHTML = `⏭️`;
-                giveUpBtn.title = "Kihagyás / Megoldás (A széria már nullázódott, bátran megtekintheted a megoldást!)";
+                // A. Kihagyás / Megoldás gomb zölddé válik és a szívtörés eltűnik
+                const giveUpBtn = document.getElementById('btn-giveup');
+                if (giveUpBtn) {
+                    giveUpBtn.classList.add('skip-btn-safe');
+                    giveUpBtn.innerHTML = `⏭️`;
+                    giveUpBtn.title = "Kihagyás / Megoldás (A széria már nullázódott, bátran megtekintheted a megoldást!)";
+                }
+
+                // B. Fejléc széria nullázódása animációval
+                userStreak = 0;
+                saveStats();
+                const statEl = document.getElementById('stat-streak');
+                if (statEl) {
+                    statEl.classList.remove('streak-break-anim');
+                    void statEl.offsetWidth;
+                    statEl.classList.add('streak-break-anim');
+                }
+
+                // C. Szó széria (perfectStreak) nullázódása animációval
+                const currentWord = testList[testIndex];
+                if (currentWord) {
+                    currentWord.perfectStreak = 0;
+                    const wIdx = allWords.findIndex(w => w.id === currentWord.id);
+                    if (wIdx > -1) allWords[wIdx].perfectStreak = 0;
+                    updateDoc(doc(db, "words", currentWord.id), { perfectStreak: 0 });
+                }
+                const wordStreakVal = document.getElementById('test-word-streak-val');
+                if (wordStreakVal) wordStreakVal.textContent = '0';
+                const wordStreakBadge = document.getElementById('test-word-streak-badge');
+                if (wordStreakBadge) {
+                    wordStreakBadge.classList.remove('word-streak-break-anim');
+                    void wordStreakBadge.offsetWidth;
+                    wordStreakBadge.classList.add('word-streak-break-anim');
+                }
             }
+        }
 
-            // B. Fejléc széria nullázódása animációval
-            userStreak = 0;
+        // V37: Ha korábban megtört a széria (mert még nem volt kész szinonima),
+        // de most sikerült beírni egy helyes szinonimát: Visszaállítjuk a megőrzött szériát!
+        if (isMultiSynonym && hasSolvedSynonym && window.currentTestStreakBroken) {
+            window.currentTestStreakBroken = false;
+            window.currentTestStreakProtected = true;
+            userStreak = (window.roundInitialUserStreak !== undefined) ? window.roundInitialUserStreak : userStreak;
             saveStats();
-            const statEl = document.getElementById('stat-streak');
-            if (statEl) {
-                statEl.classList.remove('streak-break-anim');
-                void statEl.offsetWidth;
-                statEl.classList.add('streak-break-anim');
-            }
-
-            // C. Szó széria (perfectStreak) nullázódása animációval
             const currentWord = testList[testIndex];
+            const initWordStreak = (window.roundInitialWordStreak !== undefined) ? window.roundInitialWordStreak : (currentWord ? (currentWord.perfectStreak || 0) : 0);
             if (currentWord) {
-                currentWord.perfectStreak = 0;
+                currentWord.perfectStreak = initWordStreak;
                 const wIdx = allWords.findIndex(w => w.id === currentWord.id);
-                if (wIdx > -1) allWords[wIdx].perfectStreak = 0;
-                updateDoc(doc(db, "words", currentWord.id), { perfectStreak: 0 });
+                if (wIdx > -1) allWords[wIdx].perfectStreak = initWordStreak;
+                updateDoc(doc(db, "words", currentWord.id), { perfectStreak: initWordStreak });
             }
             const wordStreakVal = document.getElementById('test-word-streak-val');
-            if (wordStreakVal) wordStreakVal.textContent = '0';
+            if (wordStreakVal) wordStreakVal.textContent = initWordStreak;
             const wordStreakBadge = document.getElementById('test-word-streak-badge');
-            if (wordStreakBadge) {
-                wordStreakBadge.classList.remove('word-streak-break-anim');
-                void wordStreakBadge.offsetWidth;
-                wordStreakBadge.classList.add('word-streak-break-anim');
+            if (wordStreakBadge) wordStreakBadge.classList.remove('word-streak-break-anim');
+            const statEl = document.getElementById('stat-streak');
+            if (statEl) statEl.classList.remove('streak-break-anim');
+            const giveUpBtn = document.getElementById('btn-giveup');
+            if (giveUpBtn) {
+                giveUpBtn.classList.remove('skip-btn-safe');
+                giveUpBtn.innerHTML = `⏭️<span style="font-size:0.7rem; margin-left:2px;">💔</span>`;
+                giveUpBtn.title = "Kihagyás / Megoldás (Figyelem: nullázza a szériát!)";
             }
         }
     };
@@ -3866,9 +4570,7 @@
             // Pontszámítás: 50 alapértelmezett pont + minden további helyes szinonimáért +25 pont
             const bonusWords = Math.max(0, correctCount - 1);
             const bonusPoints = bonusWords * 25;
-            const earnedPoints = 50 + bonusPoints;
-
-            userPoints += earnedPoints; 
+            let earnedPoints = 50 + bonusPoints;
 
             const finalMaxWordError = maxWordErrorAcrossMatches;
             const totalErrorsObserved = totalWordErrorsAcrossMatches;
@@ -3950,8 +4652,24 @@
                 isWithinTolerance = !hasTooManyWordErrors && (finalMaxWordError <= 1);
             }
 
-            const prevUserStreak = userStreak;
-            if (isWithinTolerance) {
+            // V35 SZABÁLY:
+            // Ha legalább 2 szinonima van megadva, és az egyiket helyesen megadjuk (correctCount >= 1),
+            // de egy másik szinonimát 2x elhibázunk (hasTooManyWordErrors):
+            // - A széria NEM vesztődik el (megőrizzük a korábbi értéket)
+            // - A széria NEM megy feljebb (nem kap +1-et)
+            // - Erre a körre NEM kapunk pontot (+0 pont)
+            const isSynonymSavedStreak = (rawTargetParts.length >= 2) && (correctCount >= 1) && hasTooManyWordErrors && !hintBrokeStreak;
+
+            if (isSynonymSavedStreak) {
+                earnedPoints = 0;
+            } else {
+                userPoints += earnedPoints;
+            }
+
+            const prevUserStreak = (window.roundInitialUserStreak !== undefined) ? window.roundInitialUserStreak : userStreak;
+            if (isSynonymSavedStreak) {
+                userStreak = prevUserStreak; // V37: Széria megőrizve
+            } else if (isWithinTolerance) {
                 userStreak += 1;
                 if(userStreak > userMaxStreak) userMaxStreak = userStreak;
             } else {
@@ -3966,10 +4684,16 @@
             }
             window.updateVisuals();
 
-            let currentPerfectStreak = (currentWord.perfectStreak || 0);
+            let currentPerfectStreak = (window.roundInitialWordStreak !== undefined) ? window.roundInitialWordStreak : (currentWord.perfectStreak || 0);
             let qualifiesForArchive = false;
 
-            if (window.autoArchiveEnabled && isWithinTolerance) {
+            if (isSynonymSavedStreak) {
+                // V37: A szó szériája (perfectStreak) sem vesztődik el és nem is nő
+                currentWord.perfectStreak = currentPerfectStreak;
+                const wIdx = allWords.findIndex(w => w.id === currentWord.id);
+                if (wIdx > -1) allWords[wIdx].perfectStreak = currentPerfectStreak;
+                updateDoc(doc(db, "words", currentWord.id), { perfectStreak: currentPerfectStreak });
+            } else if (window.autoArchiveEnabled && isWithinTolerance) {
                 currentPerfectStreak += 1;
                 if (currentPerfectStreak >= window.autoArchiveThreshold) {
                     qualifiesForArchive = true;
@@ -3984,6 +4708,7 @@
                 }
             } else {
                 currentPerfectStreak = 0;
+                currentWord.perfectStreak = 0;
                 const wIdx = allWords.findIndex(w => w.id === currentWord.id);
                 if (wIdx > -1) allWords[wIdx].perfectStreak = 0;
                 updateDoc(doc(db, "words", currentWord.id), { perfectStreak: 0 });
@@ -3999,7 +4724,34 @@
 
             res.style.color='var(--success)';
 
-            if (isWithinTolerance) {
+            if (isSynonymSavedStreak) {
+                // V37: Szó streak jelvény megőrizve (nincs animáció)
+                const wordStreakVal = document.getElementById('test-word-streak-val');
+                const wordStreakBadge = document.getElementById('test-word-streak-badge');
+                if (wordStreakVal) wordStreakVal.textContent = currentPerfectStreak;
+                if (wordStreakBadge) {
+                    wordStreakBadge.title = `Szó széria: ${currentPerfectStreak}/${window.autoArchiveThreshold} (Megőrizve)`;
+                    wordStreakBadge.classList.remove('streak-up-anim');
+                    wordStreakBadge.classList.remove('word-streak-break-anim');
+                }
+
+                // Pont jelvény: +0 pont
+                const pointsBadge = document.getElementById('test-earned-points-badge');
+                if (pointsBadge) {
+                    pointsBadge.style.display = 'inline-flex';
+                    pointsBadge.innerHTML = `+0 <span style="font-size:0.72rem; margin-left:2px; font-weight:700;">pont</span>`;
+                    pointsBadge.classList.remove('reward-pop-anim');
+                }
+
+                // Összesített széria jelvény: a meglévő széria látható marad
+                const overallBadge = document.getElementById('test-overall-streak-badge');
+                if (overallBadge) {
+                    overallBadge.style.display = 'inline-flex';
+                    overallBadge.innerHTML = `🔥 ${userStreak}`;
+                    overallBadge.title = `Összesített széria: ${userStreak} (Megőrizve)`;
+                    overallBadge.classList.remove('reward-pop-anim');
+                }
+            } else if (isWithinTolerance) {
                 // V28 ÚJDONSÁG:
                 // 1. A szó streak jelvény animációval felmegy (pl. 1-ről 2-re / 3-ra)
                 const wordStreakVal = document.getElementById('test-word-streak-val');
@@ -4095,7 +4847,37 @@
                     res.style.display = 'none';
                 } else {
                     let txt = '';
-                    if (hintBrokeStreak) {
+                    if (isSynonymSavedStreak) {
+                        const errorDetailsHtml = displayVariants.map((err) => {
+                            const ctx = err.targetWord ? ` (${err.targetWord})` : '';
+                            const isDanger = (err.wordMistakeCount >= 2);
+                            const color = isDanger ? 'var(--error)' : 'var(--warning)';
+                            const icon = isDanger ? '❌' : '⚠️';
+                            const tag = isDanger ? '(2 elírás)' : '(1 elírás)';
+                            return `<div style="color:${color}; margin-top:3px;">• ${icon} ${err.index}. ${isDanger ? 'hiba' : 'elírás'}${ctx}: <strong>${err.desc}</strong> <span style="font-size:0.82rem; opacity:0.85;">${tag}</span></div>`;
+                        }).join('');
+
+                        txt += `
+                        <div style="font-size:0.9rem; color:var(--text-main); display:block; margin-top:8px; line-height:1.5;">
+                            <div style="font-weight:bold; margin-bottom:6px; color:var(--primary); font-size:0.96rem; display:flex; align-items:center; gap:6px;">
+                                🛡️ Részben sikeres válasz – A széria megmaradt!
+                            </div>
+                            <div style="margin-bottom:8px; padding:10px 14px; background:rgba(99, 102, 241, 0.08); border-radius:12px; border-left:4px solid var(--primary); font-size:0.88rem; line-height:1.55;">
+                                <div style="margin-bottom:5px;">
+                                    ✅ <strong>Helyes szinonima:</strong> Mivel az egyik szinonimát sikeresen beírtad, a <strong>szériád nem veszett el</strong>, az eddigi eredményed megmaradt!
+                                </div>
+                                <div style="color:var(--text-sub);">
+                                    ⚠️ <strong>2 elírás a másik szinonimánál:</strong> Mivel a másik szinonimánál 2 elírás történt, erre a körre <strong>nem jár pont (+0 pont)</strong>, és a <strong>széria sem növekedett</strong>.
+                                </div>
+                            </div>
+                            ${synonymsInfoHtml}
+                            ${displayVariants.length > 0 ? `
+                            <div style="margin-left:6px; margin-top:8px;">
+                                <div style="font-weight:600; font-size:0.85rem; color:var(--text-sub); margin-bottom:4px;">Elírások részletei:</div>
+                                ${errorDetailsHtml}
+                            </div>` : ''}
+                        </div>`;
+                    } else if (hintBrokeStreak) {
                         txt += `
                         <div style="font-size:0.9rem; color:var(--warning); display:block; margin-top:8px; line-height:1.5;">
                             <div style="font-weight:bold; margin-bottom:4px;">💡 A 4. javaslat felhasználása miatt a széria nullázódott.</div>
@@ -4145,14 +4927,21 @@
                 }
             }
 
-            // V25: Ha történtek elírások vagy széria-törés, megjelenítjük a zöld kiemelt információ gombot a streak gomb alatt!
+            // V25/V35: Ha történtek elírások vagy széria-törés vagy szinonima védelem, megjelenítjük a kiemelt információ gombot!
             const infoBtn = document.getElementById('btn-test-info');
             if (infoBtn) {
-                if ((displayVariants && displayVariants.length > 0) || hasTooManyWordErrors || hintBrokeStreak) {
+                if ((displayVariants && displayVariants.length > 0) || hasTooManyWordErrors || hintBrokeStreak || isSynonymSavedStreak) {
                     infoBtn.style.display = 'inline-flex';
+                    if (isSynonymSavedStreak) {
+                        infoBtn.title = "Információ: A széria megmaradt (részben sikeres válasz)! Kattints a részletekért.";
+                    }
                 } else {
                     infoBtn.style.display = 'none';
                 }
+            }
+
+            if (isSynonymSavedStreak && window.showToast) {
+                window.showToast("🛡️ Szinonima védve: A széria nem veszett el! (Részletek az Info gombra kattintva)", "info", 3500);
             }
 
             // Mindig elindítjuk a váltakozó animációt, ha voltak elírások (akár menet közben, akár beküldve)!
